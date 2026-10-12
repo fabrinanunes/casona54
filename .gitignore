@@ -1,0 +1,14 @@
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.*.local
+
+# Go
+backend/*.test
+backend/coverage.out
+
+# Editors and OS
+.DS_Store
+.vscode/
+.idea/
