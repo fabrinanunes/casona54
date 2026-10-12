@@ -22,6 +22,7 @@ function toPaymentPayload(payment: PaymentFormData): PaymentPayload {
     responsible: payment.responsible,
     status: payment.status,
     paid_at: payment.paidAt,
+    frequency: payment.frequency,
   };
 }
 

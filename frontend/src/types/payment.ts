@@ -1,3 +1,4 @@
+import type { PaymentFrequency } from "../constants/frequencyConstants";
 import type { PaymentStatus } from "../constants/paymentConstants";
 
 export type Payment = {
@@ -9,6 +10,7 @@ export type Payment = {
   responsible: string;
   status: PaymentStatus;
   paid_at: string;
+  frequency: PaymentFrequency;
 };
 
 export type PaymentFormData = {
@@ -19,6 +21,7 @@ export type PaymentFormData = {
   responsible: string;
   status: PaymentStatus;
   paidAt: string;
+  frequency: PaymentFrequency;
 };
 
 export type PaymentPayload = {
@@ -29,4 +32,5 @@ export type PaymentPayload = {
   responsible: string;
   status: PaymentFormData["status"];
   paid_at: string;
+  frequency: PaymentFrequency;
 };

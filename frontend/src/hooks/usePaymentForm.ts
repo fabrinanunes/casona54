@@ -12,6 +12,10 @@ import type {
   PaymentFormData,
 } from "../types/payment";
 
+import {
+  PaymentFrequency,
+} from "../constants/frequencyConstants";
+
 type PaymentModalMode =
   | "create"
   | "edit";
@@ -43,6 +47,7 @@ const initialPayment: PaymentFormData = {
   responsible: "",
   status: PaymentStatus.PENDING,
   paidAt: "",
+  frequency: PaymentFrequency.ONCE,
 };
 
 function paymentToFormData(
@@ -56,6 +61,7 @@ function paymentToFormData(
     responsible: payment.responsible,
     status: payment.status,
     paidAt: payment.paid_at,
+    frequency: payment.frequency,
   };
 }
 

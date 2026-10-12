@@ -9,6 +9,7 @@ import {
 import { usePayments } from "../../hooks/usePayments";
 import { usePaymentForm } from "../../hooks/usePaymentForm";
 import PaymentModal from "../PaymentModal/PaymentModal";
+import { PaymentFrequencyLabel } from "../../constants/frequencyConstants";
 
 import {
   formatCurrency,
@@ -410,7 +411,9 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
                   <div className="payment-card__details">
                     <span>Vencimento: {formatDate(payment.due_date)}</span>
-
+                    <span>
+                      Frequência: {PaymentFrequencyLabel[payment.frequency]}
+                    </span>
                     <span>Responsável: {payment.responsible}</span>
 
                     <span

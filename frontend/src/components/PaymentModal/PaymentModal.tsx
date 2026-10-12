@@ -14,6 +14,11 @@ import {
   parseCurrencyInput,
 } from "../../utils/formatUtils";
 
+import {
+  PaymentFrequency,
+  PaymentFrequencyLabel,
+} from "../../constants/frequencyConstants";
+
 import "./PaymentModal.css";
 
 type PaymentModalProps = {
@@ -145,6 +150,29 @@ function PaymentModal({
                 })
               }
             />
+          </div>
+
+          <div className="payment-modal__field">
+            <label htmlFor="payment-frequency">Frequência</label>
+
+            <select
+              id="payment-frequency"
+              value={payment.frequency}
+              required
+              disabled={isSaving}
+              onChange={(event) =>
+                onChange({
+                  ...payment,
+                  frequency: event.target.value as PaymentFormData["frequency"],
+                })
+              }
+            >
+              {Object.values(PaymentFrequency).map((frequency) => (
+                <option key={frequency} value={frequency}>
+                  {PaymentFrequencyLabel[frequency]}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="payment-modal__field">

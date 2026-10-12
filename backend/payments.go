@@ -20,7 +20,17 @@ type Payment struct {
 	Category    string  `json:"category"`
 	Responsible string  `json:"responsible"`
 	Status      string  `json:"status"`
-	PaidAt string `json:"paid_at"`
+	PaidAt      string  `json:"paid_at"`
+	Frequency   string  `json:"frequency"`
+}
+
+func isValidPaymentFrequency(frequency string) bool {
+	switch frequency {
+	case "once", "weekly", "monthly", "yearly":
+		return true
+	default:
+		return false
+	}
 }
 
 func paymentsHandler(w http.ResponseWriter, r *http.Request) {
@@ -46,7 +56,8 @@ func getPayments(w http.ResponseWriter, r *http.Request) {
 				category,
 				responsible,
 				status,
-				COALESCE(paid_at::text, '')
+				COALESCE(paid_at::text, ''),
+				frequency
 			FROM payments
 			ORDER BY id
 		`,
@@ -73,6 +84,7 @@ func getPayments(w http.ResponseWriter, r *http.Request) {
 			&payment.Responsible,
 			&payment.Status,
 			&payment.PaidAt,
+			&payment.Frequency,
 		)
 
 		if err != nil {
@@ -118,6 +130,11 @@ func createPayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !isValidPaymentFrequency(payment.Frequency) {
+		http.Error(w, "Invalid payment frequency", http.StatusBadRequest)
+		return
+	}
+
 	err = db.QueryRow(
 		context.Background(),
 		`
@@ -128,9 +145,10 @@ func createPayment(w http.ResponseWriter, r *http.Request) {
 				category,
 				responsible,
 				status,
-				paid_at
+				paid_at,
+				frequency
 			)
-			VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, '')::date)
+			VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, '')::date, $8)
 			RETURNING id
 		`,
 		payment.Description,
@@ -140,6 +158,7 @@ func createPayment(w http.ResponseWriter, r *http.Request) {
 		payment.Responsible,
 		payment.Status,
 		payment.PaidAt,
+		payment.Frequency,
 	).Scan(&payment.ID)
 
 	if err != nil {
@@ -175,7 +194,8 @@ func markPaymentAsPaid(w http.ResponseWriter, r *http.Request, id int) {
 				category,
 				responsible,
 				status,
-				COALESCE(paid_at::text, '')
+				COALESCE(paid_at::text, ''),
+				frequency
 		`,
 		id,
 	).Scan(
@@ -187,6 +207,7 @@ func markPaymentAsPaid(w http.ResponseWriter, r *http.Request, id int) {
 		&payment.Responsible,
 		&payment.Status,
 		&payment.PaidAt,
+		&payment.Frequency,
 	)
 
 	if err != nil {
@@ -254,7 +275,8 @@ func getPaymentByID(w http.ResponseWriter, id int) {
 				category,
 				responsible,
 				status,
-				COALESCE(paid_at::text, '')
+				COALESCE(paid_at::text, ''),
+				frequency
 			FROM payments
 			WHERE id = $1
 		`,
@@ -268,6 +290,7 @@ func getPaymentByID(w http.ResponseWriter, id int) {
 		&payment.Responsible,
 		&payment.Status,
 		&payment.PaidAt,
+		&payment.Frequency,
 	)
 
 	if err != nil {
@@ -309,6 +332,11 @@ func updatePayment(w http.ResponseWriter, r *http.Request, id int) {
 		return
 	}
 
+	if !isValidPaymentFrequency(updatedPayment.Frequency) {
+		http.Error(w, "Invalid payment frequency", http.StatusBadRequest)
+		return
+	}
+
 	err = db.QueryRow(
 		context.Background(),
 		`
@@ -328,8 +356,9 @@ func updatePayment(w http.ResponseWriter, r *http.Request, id int) {
 							(NOW() AT TIME ZONE 'America/Sao_Paulo')::date
 						)
 					ELSE NULL
-       		 END
-			WHERE id = $8
+					END,
+				frequency = $8
+			WHERE id = $9
 			RETURNING id
 		`,
 		updatedPayment.Description,
@@ -339,6 +368,7 @@ func updatePayment(w http.ResponseWriter, r *http.Request, id int) {
 		updatedPayment.Responsible,
 		updatedPayment.Status,
 		updatedPayment.PaidAt,
+		updatedPayment.Frequency,
 		id,
 	).Scan(&updatedPayment.ID)
 
