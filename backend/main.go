@@ -7,7 +7,10 @@ import (
 )
 
 func main() {
-	connectDatabase()
+	if err := connectDatabase(); err != nil {
+		log.Fatalf("Database startup failed: %v", err)
+	}
+	defer db.Close()
 
 	http.HandleFunc("/health", healthHandler)
 	http.HandleFunc("/payments", authMiddleware(paymentsHandler))
@@ -19,15 +22,20 @@ func main() {
 
 	log.Println("Server is running on port 8080")
 
-	if err := http.ListenAndServe(":8080", corsMiddleware(http.DefaultServeMux)); err != nil {
-		log.Fatal(err)
+	if err := http.ListenAndServe(
+		":8080",
+		corsMiddleware(http.DefaultServeMux),
+	); err != nil {
+		log.Printf("Server stopped: %v", err)
 	}
 }
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+	json.NewEncoder(w).Encode(map[string]string{
+		"status": "ok",
+	})
 }
 
 // http.HandleFunc registra uma rota para o endpoint "/health" e define a função que será chamada quando uma requisição for feita para esse endpoint.

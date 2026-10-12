@@ -2,26 +2,34 @@ package main
 
 import (
 	"context"
-	"log"
+	"fmt"
+	"os"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var db *pgxpool.Pool
 
-func connectDatabase() {
-	databaseURL := "postgres://postgres:postgres@localhost:5432/casona54_app"
-	var err error
-
-	db, err = pgxpool.New(context.Background(), databaseURL)
-	if err != nil {
-		log.Fatalf("Unable to connect to database: %v", err)
+func connectDatabase() error {
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		return fmt.Errorf("DATABASE_URL is not set")
 	}
 
-	err = db.Ping(context.Background())
+	pool, err := pgxpool.New(context.Background(), databaseURL)
 	if err != nil {
-		log.Fatalf("Database ping failed: %v", err)
+		return fmt.Errorf("create database connection pool: %w", err)
 	}
 
-	log.Println("Connected to the database successfully")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := pool.Ping(ctx); err != nil {
+		pool.Close()
+		return fmt.Errorf("connect to database: %w", err)
+	}
+
+	db = pool
+	return nil
 }

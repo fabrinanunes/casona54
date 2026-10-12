@@ -5,5 +5,5 @@ CREATE TABLE payments (
     due_date DATE NOT NULL,
     category TEXT NOT NULL,
     responsible TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'pending',
+    status TEXT NOT NULL DEFAULT 'pending'
 );
