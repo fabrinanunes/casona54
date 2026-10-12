@@ -42,6 +42,7 @@ const initialPayment: PaymentFormData = {
   category: "",
   responsible: "",
   status: PaymentStatus.PENDING,
+  paidAt: "",
 };
 
 function paymentToFormData(
@@ -54,6 +55,7 @@ function paymentToFormData(
     category: payment.category,
     responsible: payment.responsible,
     status: payment.status,
+    paidAt: payment.paid_at,
   };
 }
 

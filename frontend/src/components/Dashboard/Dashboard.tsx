@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import type { FormEvent } from "react";
 
 import {
   PaymentStatus,
@@ -6,6 +7,8 @@ import {
 } from "../../constants/paymentConstants";
 
 import { usePayments } from "../../hooks/usePayments";
+import { usePaymentForm } from "../../hooks/usePaymentForm";
+import PaymentModal from "../PaymentModal/PaymentModal";
 
 import {
   formatCurrency,
@@ -36,7 +39,12 @@ type DashboardProps = {
 };
 
 export default function Dashboard({ onLogout }: DashboardProps) {
-  const { payments, isLoading, error } = usePayments();
+  const { payments, isLoading, error, create, update, remove, markAsPaid } =
+    usePayments();
+  const paymentForm = usePaymentForm();
+  const [isSaving, setIsSaving] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [markingPaymentId, setMarkingPaymentId] = useState<number | null>(null);
 
   const [filters, setFilters] = useState<PaymentFilters>({
     status: "all",
@@ -85,6 +93,64 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     }));
   };
 
+  const handlePaymentSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    setIsSaving(true);
+    setActionError(null);
+
+    try {
+      if (
+        paymentForm.mode === "edit" &&
+        paymentForm.editingPaymentId !== null
+      ) {
+        await update(paymentForm.editingPaymentId, paymentForm.payment);
+      } else {
+        await create(paymentForm.payment);
+      }
+
+      paymentForm.close();
+    } catch (error) {
+      console.error("Error saving payment:", error);
+      setActionError("Não foi possível salvar o pagamento. Tente novamente.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeletePayment = async (id: number, description: string) => {
+    const confirmed = window.confirm(
+      `Deseja excluir o pagamento "${description}"? Essa ação não pode ser desfeita.`,
+    );
+
+    if (!confirmed) return;
+
+    setActionError(null);
+
+    try {
+      await remove(id);
+    } catch (error) {
+      console.error("Error deleting payment:", error);
+      setActionError("Não foi possível excluir o pagamento. Tente novamente.");
+    }
+  };
+
+  const handleMarkAsPaid = async (id: number) => {
+    setMarkingPaymentId(id);
+    setActionError(null);
+
+    try {
+      await markAsPaid(id);
+    } catch (error) {
+      console.error("Error marking payment as paid:", error);
+      setActionError(
+        "Não foi possível marcar o pagamento como pago. Tente novamente.",
+      );
+    } finally {
+      setMarkingPaymentId(null);
+    }
+  };
+
   return (
     <main className="dashboard">
       <header className="dashboard__header">
@@ -98,9 +164,9 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         </button>
       </header>
 
-      {error && (
+      {(error || actionError) && (
         <div className="dashboard__error">
-          Não foi possível carregar os pagamentos.
+          {actionError ?? "Não foi possível carregar os pagamentos."}
         </div>
       )}
 
@@ -223,6 +289,17 @@ export default function Dashboard({ onLogout }: DashboardProps) {
               {sortedPayments.length !== 1 ? "s" : ""}
             </span>
           </div>
+
+          <button
+            type="button"
+            className="dashboard__add-payment"
+            onClick={() => {
+              setActionError(null);
+              paymentForm.openCreate();
+            }}
+          >
+            Novo pagamento
+          </button>
         </div>
 
         <div className="dashboard__filters">
@@ -347,6 +424,48 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                         ? "Em atraso"
                         : PaymentStatusLabel[payment.status]}
                     </span>
+
+                    {payment.status === PaymentStatus.PAID &&
+                      payment.paid_at && (
+                        <span>Pago em: {formatDate(payment.paid_at)}</span>
+                      )}
+
+                    <div className="payment-card__actions">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActionError(null);
+                          paymentForm.openEdit(payment);
+                        }}
+                      >
+                        Editar
+                      </button>
+
+                      {payment.status === PaymentStatus.PENDING && (
+                        <button
+                          type="button"
+                          disabled={markingPaymentId === payment.id}
+                          onClick={() => void handleMarkAsPaid(payment.id)}
+                        >
+                          {markingPaymentId === payment.id
+                            ? "Atualizando..."
+                            : "Marcar como pago"}
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        className="payment-card__delete"
+                        onClick={() =>
+                          void handleDeletePayment(
+                            payment.id,
+                            payment.description,
+                          )
+                        }
+                      >
+                        Excluir
+                      </button>
+                    </div>
                   </div>
                 </article>
               );
@@ -354,6 +473,18 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           </div>
         )}
       </section>
+
+      {paymentForm.isOpen && (
+        <PaymentModal
+          mode={paymentForm.mode}
+          payment={paymentForm.payment}
+          onChange={paymentForm.setPayment}
+          onClose={paymentForm.close}
+          onSubmit={handlePaymentSubmit}
+          isSaving={isSaving}
+          error={actionError}
+        />
+      )}
     </main>
   );
 }

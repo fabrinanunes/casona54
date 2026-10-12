@@ -8,6 +8,7 @@ export type Payment = {
   category: string;
   responsible: string;
   status: PaymentStatus;
+  paid_at: string;
 };
 
 export type PaymentFormData = {
@@ -17,4 +18,15 @@ export type PaymentFormData = {
   category: string;
   responsible: string;
   status: PaymentStatus;
+  paidAt: string;
+};
+
+export type PaymentPayload = {
+  description: string;
+  amount: number;
+  due_date: string;
+  category: string;
+  responsible: string;
+  status: PaymentFormData["status"];
+  paid_at: string;
 };

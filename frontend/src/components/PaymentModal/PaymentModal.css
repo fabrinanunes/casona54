@@ -37,6 +37,16 @@
   font-size: 13px;
 }
 
+.payment-modal__error {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  background: #fef2f2;
+  color: #b42318;
+  font-size: 13px;
+}
+
 .payment-modal__close {
   width: 32px;
   height: 32px;
@@ -106,6 +116,12 @@
   background: #2563eb;
   color: white;
   font-weight: 600;
+}
+
+.payment-modal__actions button:disabled,
+.payment-modal__close:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 /* Mobile */

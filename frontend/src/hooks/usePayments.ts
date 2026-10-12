@@ -5,6 +5,7 @@ import {
   deletePayment,
   getPayments,
   updatePayment,
+  markPaymentAsPaid,
 } from "../services/paymentsService";
 
 import type {
@@ -20,6 +21,7 @@ type UsePaymentsResult = {
   update: (id: number, payment: PaymentFormData) => Promise<void>;
   remove: (id: number) => Promise<void>;
   refresh: () => Promise<void>;
+  markAsPaid: (id: number) => Promise<void>;
 };
 
 export function usePayments(): UsePaymentsResult {
@@ -95,6 +97,14 @@ export function usePayments(): UsePaymentsResult {
     [refresh],
   );
 
+  const markAsPaid = useCallback(
+  async (id: number) => {
+    await markPaymentAsPaid(id);
+    await refresh();
+  },
+  [refresh],
+);
+
   return {
     payments,
     isLoading,
@@ -103,5 +113,6 @@ export function usePayments(): UsePaymentsResult {
     update,
     remove,
     refresh,
+    markAsPaid,
   };
 }

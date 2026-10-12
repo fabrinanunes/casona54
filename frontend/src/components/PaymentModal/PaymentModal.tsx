@@ -8,7 +8,7 @@ import {
 
 import type { PaymentFormData } from "../../types/payment";
 
-import { formatCurrency } from "../../utils/formatUtils";
+import { formatCurrency, getTodayForDateInput } from "../../utils/formatUtils";
 
 import "./PaymentModal.css";
 
@@ -18,6 +18,8 @@ type PaymentModalProps = {
   onChange: (payment: PaymentFormData) => void;
   onClose: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  isSaving: boolean;
+  error: string | null;
 };
 
 function PaymentModal({
@@ -26,6 +28,8 @@ function PaymentModal({
   onChange,
   onClose,
   onSubmit,
+  isSaving,
+  error,
 }: PaymentModalProps) {
   const [isAmountFocused, setIsAmountFocused] = useState(false);
 
@@ -42,10 +46,17 @@ function PaymentModal({
 
   return (
     <div className="payment-modal-overlay">
-      <div className="payment-modal">
+      <div
+        className="payment-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="payment-modal-title"
+      >
         <div className="payment-modal__header">
           <div>
-            <h2>{isEdit ? "Editar pagamento" : "Novo pagamento"}</h2>
+            <h2 id="payment-modal-title">
+              {isEdit ? "Editar pagamento" : "Novo pagamento"}
+            </h2>
 
             <p>
               {isEdit
@@ -59,12 +70,19 @@ function PaymentModal({
             type="button"
             onClick={onClose}
             aria-label="Fechar"
+            disabled={isSaving}
           >
             ×
           </button>
         </div>
 
         <form className="payment-modal__form" onSubmit={onSubmit}>
+          {error && (
+            <p className="payment-modal__error" role="alert">
+              {error}
+            </p>
+          )}
+
           <div className="payment-modal__field">
             <label htmlFor="payment-description">Descrição</label>
 
@@ -73,6 +91,7 @@ function PaymentModal({
               type="text"
               value={payment.description}
               required
+              disabled={isSaving}
               onChange={(event) =>
                 onChange({
                   ...payment,
@@ -97,6 +116,7 @@ function PaymentModal({
                     : formatCurrency(Number(payment.amount))
               }
               required
+              disabled={isSaving}
               onFocus={() => setIsAmountFocused(true)}
               onChange={(event) => handleAmountChange(event.target.value)}
               onBlur={() => setIsAmountFocused(false)}
@@ -111,6 +131,7 @@ function PaymentModal({
               type="date"
               value={payment.dueDate}
               required
+              disabled={isSaving}
               onChange={(event) =>
                 onChange({
                   ...payment,
@@ -128,6 +149,7 @@ function PaymentModal({
               type="text"
               value={payment.category}
               required
+              disabled={isSaving}
               onChange={(event) =>
                 onChange({
                   ...payment,
@@ -145,6 +167,7 @@ function PaymentModal({
               type="text"
               value={payment.responsible}
               required
+              disabled={isSaving}
               onChange={(event) =>
                 onChange({
                   ...payment,
@@ -162,12 +185,20 @@ function PaymentModal({
                 id="payment-status"
                 value={payment.status}
                 required
-                onChange={(event) =>
+                disabled={isSaving}
+                onChange={(event) => {
+                  const status = event.target
+                    .value as PaymentFormData["status"];
+
                   onChange({
                     ...payment,
-                    status: event.target.value as PaymentFormData["status"],
-                  })
-                }
+                    status,
+                    paidAt:
+                      status === PaymentStatus.PAID
+                        ? payment.paidAt || getTodayForDateInput()
+                        : "",
+                  });
+                }}
               >
                 {Object.values(PaymentStatus).map((status) => (
                   <option key={status} value={status}>
@@ -178,13 +209,37 @@ function PaymentModal({
             </div>
           )}
 
+          {isEdit && payment.status === PaymentStatus.PAID && (
+            <div className="payment-modal__field">
+              <label htmlFor="payment-paid-at">Data do pagamento</label>
+
+              <input
+                id="payment-paid-at"
+                type="date"
+                value={payment.paidAt}
+                required
+                disabled={isSaving}
+                onChange={(event) =>
+                  onChange({
+                    ...payment,
+                    paidAt: event.target.value,
+                  })
+                }
+              />
+            </div>
+          )}
+
           <div className="payment-modal__actions">
-            <button type="button" onClick={onClose}>
+            <button type="button" onClick={onClose} disabled={isSaving}>
               Cancelar
             </button>
 
-            <button type="submit">
-              {isEdit ? "Salvar alterações" : "Salvar pagamento"}
+            <button type="submit" disabled={isSaving}>
+              {isSaving
+                ? "Salvando..."
+                : isEdit
+                  ? "Salvar alterações"
+                  : "Salvar pagamento"}
             </button>
           </div>
         </form>

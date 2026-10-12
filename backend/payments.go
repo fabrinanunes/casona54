@@ -20,6 +20,7 @@ type Payment struct {
 	Category    string  `json:"category"`
 	Responsible string  `json:"responsible"`
 	Status      string  `json:"status"`
+	PaidAt string `json:"paid_at"`
 }
 
 func paymentsHandler(w http.ResponseWriter, r *http.Request) {
@@ -44,7 +45,8 @@ func getPayments(w http.ResponseWriter, r *http.Request) {
 				due_date::text,
 				category,
 				responsible,
-				status
+				status,
+				COALESCE(paid_at::text, '')
 			FROM payments
 			ORDER BY id
 		`,
@@ -57,7 +59,7 @@ func getPayments(w http.ResponseWriter, r *http.Request) {
 
 	defer rows.Close()
 
-	var payments []Payment
+	payments := make([]Payment, 0)
 
 	for rows.Next() {
 		var payment Payment
@@ -70,6 +72,7 @@ func getPayments(w http.ResponseWriter, r *http.Request) {
 			&payment.Category,
 			&payment.Responsible,
 			&payment.Status,
+			&payment.PaidAt,
 		)
 
 		if err != nil {
@@ -124,9 +127,10 @@ func createPayment(w http.ResponseWriter, r *http.Request) {
 				due_date,
 				category,
 				responsible,
-				status
+				status,
+				paid_at
 			)
-			VALUES ($1, $2, $3, $4, $5, $6)
+			VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, '')::date)
 			RETURNING id
 		`,
 		payment.Description,
@@ -135,6 +139,7 @@ func createPayment(w http.ResponseWriter, r *http.Request) {
 		payment.Category,
 		payment.Responsible,
 		payment.Status,
+		payment.PaidAt,
 	).Scan(&payment.ID)
 
 	if err != nil {
@@ -148,12 +153,78 @@ func createPayment(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(payment)
 }
 
-func paymentByIDHandler(w http.ResponseWriter, r *http.Request) {
-	idString := strings.TrimPrefix(r.URL.Path, "/payments/")
+func markPaymentAsPaid(w http.ResponseWriter, r *http.Request, id int) {
+	var payment Payment
 
-	id, err := strconv.Atoi(idString)
+	err := db.QueryRow(
+		r.Context(),
+		`
+			UPDATE payments
+			SET
+				status = 'paid',
+				paid_at = COALESCE(
+					paid_at,
+					(NOW() AT TIME ZONE 'America/Sao_Paulo')::date
+				)
+			WHERE id = $1
+			RETURNING
+				id,
+				description,
+				amount,
+				due_date::text,
+				category,
+				responsible,
+				status,
+				COALESCE(paid_at::text, '')
+		`,
+		id,
+	).Scan(
+		&payment.ID,
+		&payment.Description,
+		&payment.Amount,
+		&payment.DueDate,
+		&payment.Category,
+		&payment.Responsible,
+		&payment.Status,
+		&payment.PaidAt,
+	)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			http.Error(w, "Payment not found", http.StatusNotFound)
+			return
+		}
+
+		log.Printf("failed to mark payment as paid: %v", err)
+		http.Error(w, "Failed to mark payment as paid", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(payment)
+}
+
+func paymentByIDHandler(w http.ResponseWriter, r *http.Request) {
+	path := strings.TrimPrefix(r.URL.Path, "/payments/")
+	isMarkingAsPaid := strings.HasSuffix(path, "/pay")
+
+	if isMarkingAsPaid {
+		path = strings.TrimSuffix(path, "/pay")
+	}
+
+	id, err := strconv.Atoi(path)
 	if err != nil {
 		http.Error(w, "Invalid payment ID", http.StatusBadRequest)
+		return
+	}
+
+	if isMarkingAsPaid {
+		if r.Method != http.MethodPatch {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		markPaymentAsPaid(w, r, id)
 		return
 	}
 
@@ -182,7 +253,8 @@ func getPaymentByID(w http.ResponseWriter, id int) {
 				due_date::text,
 				category,
 				responsible,
-				status
+				status,
+				COALESCE(paid_at::text, '')
 			FROM payments
 			WHERE id = $1
 		`,
@@ -195,6 +267,7 @@ func getPaymentByID(w http.ResponseWriter, id int) {
 		&payment.Category,
 		&payment.Responsible,
 		&payment.Status,
+		&payment.PaidAt,
 	)
 
 	if err != nil {
@@ -246,8 +319,17 @@ func updatePayment(w http.ResponseWriter, r *http.Request, id int) {
 				due_date = $3,
 				category = $4,
 				responsible = $5,
-				status = $6
-			WHERE id = $7
+				status = $6,
+				paid_at = CASE
+					WHEN $6 = 'paid'
+						THEN COALESCE(
+							NULLIF($7, '')::date,
+							paid_at,
+							(NOW() AT TIME ZONE 'America/Sao_Paulo')::date
+						)
+					ELSE NULL
+       		 END
+			WHERE id = $8
 			RETURNING id
 		`,
 		updatedPayment.Description,
@@ -256,6 +338,7 @@ func updatePayment(w http.ResponseWriter, r *http.Request, id int) {
 		updatedPayment.Category,
 		updatedPayment.Responsible,
 		updatedPayment.Status,
+		updatedPayment.PaidAt,
 		id,
 	).Scan(&updatedPayment.ID)
 
