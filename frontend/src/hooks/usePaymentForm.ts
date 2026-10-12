@@ -50,7 +50,7 @@ function paymentToFormData(
 ): PaymentFormData {
   return {
     description: payment.description,
-    amount: payment.amount,
+    amount: payment.amount.toFixed(2).replace(".", ","),
     dueDate: payment.due_date,
     category: payment.category,
     responsible: payment.responsible,

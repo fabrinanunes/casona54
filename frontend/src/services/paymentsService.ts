@@ -1,4 +1,5 @@
 import { apiRequest } from "./api";
+import { parseCurrencyInput } from "../utils/formatUtils";
 
 import type {
   Payment,
@@ -7,9 +8,15 @@ import type {
 } from "../types/payment";
 
 function toPaymentPayload(payment: PaymentFormData): PaymentPayload {
+  const amount = parseCurrencyInput(String(payment.amount));
+
+  if (amount === null || amount <= 0) {
+    throw new Error("Informe um valor válido.");
+  }
+
   return {
     description: payment.description,
-    amount: Number(payment.amount),
+    amount,
     due_date: payment.dueDate,
     category: payment.category,
     responsible: payment.responsible,
@@ -35,24 +42,16 @@ export async function updatePayment(
   id: number,
   payment: PaymentFormData,
 ): Promise<Payment> {
-  return apiRequest<Payment>(
-    `/payments/${id}`,
-    {
-      method: "PUT",
+  return apiRequest<Payment>(`/payments/${id}`, {
+    method: "PUT",
     body: toPaymentPayload(payment),
-    },
-  );
+  });
 }
 
-export async function deletePayment(
-  id: number,
-): Promise<void> {
-  await apiRequest<void>(
-    `/payments/${id}`,
-    {
-      method: "DELETE",
-    },
-  );
+export async function deletePayment(id: number): Promise<void> {
+  await apiRequest<void>(`/payments/${id}`, {
+    method: "DELETE",
+  });
 }
 
 export async function markPaymentAsPaid(id: number): Promise<Payment> {

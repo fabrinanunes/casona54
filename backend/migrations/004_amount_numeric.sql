@@ -1,0 +1,3 @@
+ALTER TABLE payments
+ALTER COLUMN amount TYPE NUMERIC(12, 2)
+USING amount::NUMERIC(12, 2);

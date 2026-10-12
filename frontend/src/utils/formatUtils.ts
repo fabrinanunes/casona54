@@ -48,3 +48,15 @@ export function getTodayForDateInput(): string {
 
   return `${year}-${month}-${day}`;
 }
+
+export function parseCurrencyInput(value: string): number | null {
+  const normalized = value.trim().replace(/\./g, "").replace(",", ".");
+
+  if (!/^\d+(\.\d{1,2})?$/.test(normalized)) {
+    return null;
+  }
+
+  const amount = Number(normalized);
+
+  return Number.isFinite(amount) ? amount : null;
+}

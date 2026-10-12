@@ -8,7 +8,11 @@ import {
 
 import type { PaymentFormData } from "../../types/payment";
 
-import { formatCurrency, getTodayForDateInput } from "../../utils/formatUtils";
+import {
+  formatCurrency,
+  getTodayForDateInput,
+  parseCurrencyInput,
+} from "../../utils/formatUtils";
 
 import "./PaymentModal.css";
 
@@ -35,12 +39,12 @@ function PaymentModal({
 
   const isEdit = mode === "edit";
 
-  const handleAmountChange = (value: string) => {
-    const numericValue = value.replace(/\D/g, "");
+  const parsedAmount = parseCurrencyInput(String(payment.amount));
 
+  const handleAmountChange = (value: string) => {
     onChange({
       ...payment,
-      amount: numericValue === "" ? "" : Number(numericValue),
+      amount: value.replace(/[^\d,]/g, ""),
     });
   };
 
@@ -107,13 +111,15 @@ function PaymentModal({
             <input
               id="payment-amount"
               type="text"
-              inputMode="numeric"
+              inputMode="decimal"
               value={
                 payment.amount === ""
                   ? ""
                   : isAmountFocused
                     ? String(payment.amount)
-                    : formatCurrency(Number(payment.amount))
+                    : parsedAmount === null
+                      ? String(payment.amount)
+                      : formatCurrency(parsedAmount)
               }
               required
               disabled={isSaving}
