@@ -266,6 +266,7 @@ func changePasswordHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		http.Error(w, "failed to hash new password", http.StatusInternalServerError)
+		return
 	}
 
 	_, err = db.Exec(
