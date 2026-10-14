@@ -11,6 +11,7 @@ func main() {
 		log.Fatalf("Database startup failed: %v", err)
 	}
 	defer db.Close()
+	startRecurringPaymentScheduler()
 
 	http.HandleFunc("/health", healthHandler)
 	http.HandleFunc("/payments", authMiddleware(paymentsHandler))

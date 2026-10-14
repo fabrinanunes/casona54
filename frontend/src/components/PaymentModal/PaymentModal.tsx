@@ -159,7 +159,7 @@ function PaymentModal({
               id="payment-frequency"
               value={payment.frequency}
               required
-              disabled={isSaving}
+              disabled={isSaving || isEdit}
               onChange={(event) =>
                 onChange({
                   ...payment,

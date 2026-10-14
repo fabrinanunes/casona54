@@ -104,8 +104,7 @@ func getPayments(w http.ResponseWriter, r *http.Request) {
 func createPayment(w http.ResponseWriter, r *http.Request) {
 	var payment Payment
 
-	err := json.NewDecoder(r.Body).Decode(&payment)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&payment); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
@@ -135,8 +134,50 @@ func createPayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = db.QueryRow(
-		context.Background(),
+	ctx := r.Context()
+
+	tx, err := db.Begin(ctx)
+	if err != nil {
+		log.Printf("failed to begin payment transaction: %v", err)
+		http.Error(w, "Failed to create payment", http.StatusInternalServerError)
+		return
+	}
+	defer tx.Rollback(ctx)
+
+	recurrenceRuleID := 0
+
+	if payment.Frequency != "once" {
+		err = tx.QueryRow(
+			ctx,
+			`
+				INSERT INTO payment_recurrence_rules (
+					description,
+					amount,
+					frequency,
+					first_due_date,
+					category,
+					responsible
+				)
+				VALUES ($1, $2, $3, $4, $5, $6)
+				RETURNING id
+			`,
+			payment.Description,
+			payment.Amount,
+			payment.Frequency,
+			payment.DueDate,
+			payment.Category,
+			payment.Responsible,
+		).Scan(&recurrenceRuleID)
+
+		if err != nil {
+			log.Printf("failed to create payment recurrence rule: %v", err)
+			http.Error(w, "Failed to create payment", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	err = tx.QueryRow(
+		ctx,
 		`
 			INSERT INTO payments (
 				description,
@@ -146,9 +187,15 @@ func createPayment(w http.ResponseWriter, r *http.Request) {
 				responsible,
 				status,
 				paid_at,
-				frequency
+				frequency,
+				recurrence_rule_id
 			)
-			VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, '')::date, $8)
+			VALUES (
+				$1, $2, $3, $4, $5, $6,
+				NULLIF($7, '')::date,
+				$8,
+				NULLIF($9, 0)
+			)
 			RETURNING id
 		`,
 		payment.Description,
@@ -159,17 +206,35 @@ func createPayment(w http.ResponseWriter, r *http.Request) {
 		payment.Status,
 		payment.PaidAt,
 		payment.Frequency,
+		recurrenceRuleID,
 	).Scan(&payment.ID)
 
 	if err != nil {
-		log.Printf("failted to create payment: %v", err)
+		log.Printf("failed to create payment: %v", err)
 		http.Error(w, "Failed to create payment", http.StatusInternalServerError)
 		return
 	}
 
+	if err := tx.Commit(ctx); err != nil {
+		log.Printf("failed to commit payment transaction: %v", err)
+		http.Error(w, "Failed to create payment", http.StatusInternalServerError)
+		return
+	}
+
+	if recurrenceRuleID != 0 {
+		if err := generateUpcomingPayments(ctx); err != nil {
+			// O primeiro pagamento já foi salvo. O agendador tentará
+			// gerar as próximas ocorrências novamente.
+			log.Printf("failed to generate upcoming payments: %v", err)
+		}
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(payment)
+
+	if err := json.NewEncoder(w).Encode(payment); err != nil {
+		log.Printf("failed to encode created payment response: %v", err)
+	}
 }
 
 func markPaymentAsPaid(w http.ResponseWriter, r *http.Request, id int) {
