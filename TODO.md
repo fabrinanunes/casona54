@@ -12,7 +12,7 @@ Este arquivo é a fila oficial das próximas etapas. Vamos concluir cada etapa a
 
 **Por que vem primeiro:** a recorrência automática depende de cada pagamento guardar e devolver a frequência corretamente.
 
-### 2. Gerar pagamentos futuros para frequências recorrentes — próxima etapa
+### 2. Gerar pagamentos futuros para frequências recorrentes — em andamento
 
 - Criar a regra de recorrência para pagamentos semanais, mensais e anuais; pagamentos `once` não geram outros pagamentos.
 - Proposta: manter sempre os próximos 12 meses gerados; preencher a série ao criá-la e repor diariamente pelo backend hospedado, sem depender do computador local ligado.
@@ -20,6 +20,8 @@ Este arquivo é a fila oficial das próximas etapas. Vamos concluir cada etapa a
 - Tratar calendário: meses com menos dias que o vencimento original, fevereiro e anos bissextos.
 - Definir e implementar o comportamento ao editar um pagamento da série, alterar a frequência, excluir uma ocorrência ou encerrar a série.
 - Conferir que a geração automática não altera pagamentos antigos que já foram pagos.
+- Implementação inicial: migration 006, criação transacional da regra e do primeiro pagamento, geração de até 12 meses e tentativa diária pelo backend.
+- Pendente: aplicar a migration 006 no banco local, validar os cenários de geração e decidir como editar ou encerrar uma série recorrente.
 
 **Por que vem agora:** esta é a funcionalidade de negócio pedida para frequências semanais, mensais e anuais e depende da etapa 1.
 
