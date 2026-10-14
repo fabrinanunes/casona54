@@ -4,24 +4,21 @@ Este arquivo é a fila oficial das próximas etapas. Vamos concluir cada etapa a
 
 ## Próximas etapas
 
-### 1. Concluir e commitar a frequência básica dos pagamentos — em andamento
+### 1. Concluir e commitar a frequência básica dos pagamentos — concluída
 
-- Corrigir a vírgula ausente antes de `frequency = $8` no `UPDATE` de `backend/payments.go`.
-- Incluir `frequency` no `RETURNING` de `markPaymentAsPaid` e no `SELECT` de `getPaymentByID`, pois os `Scan` dessas funções já esperam esse campo.
-- Rodar `gofmt` em `backend/payments.go`.
-- Aplicar a migração `backend/migrations/005_add_frequency_to_payments.sql`, se ainda não tiver sido aplicada.
-- Conferir criar, listar, buscar, editar e marcar como pago para garantir que todos os caminhos preservam a frequência.
-- Fazer o commit da implementação quando esses caminhos estiverem funcionando.
+- A frequência está no banco, API, formulário e cartão do pagamento.
+- A migração 005 foi confirmada no banco local.
+- Commit: `636bced feat(payments): track payment frequency`.
 
 **Por que vem primeiro:** a recorrência automática depende de cada pagamento guardar e devolver a frequência corretamente.
 
-### 2. Gerar pagamentos futuros para frequências recorrentes
+### 2. Gerar pagamentos futuros para frequências recorrentes — próxima etapa
 
 - Criar a regra de recorrência para pagamentos semanais, mensais e anuais; pagamentos `once` não geram outros pagamentos.
-- Definir como o sistema mantém os próximos vencimentos disponíveis e como a geração roda no ambiente hospedado, sem depender do computador local ligado.
+- Proposta: manter sempre os próximos 12 meses gerados; preencher a série ao criá-la e repor diariamente pelo backend hospedado, sem depender do computador local ligado.
 - Guardar a relação entre a regra recorrente e cada pagamento gerado, com proteção contra geração duplicada.
 - Tratar calendário: meses com menos dias que o vencimento original, fevereiro e anos bissextos.
-- Definir o comportamento quando a frequência ou os dados da recorrência forem editados ou quando o pagamento for excluído.
+- Definir e implementar o comportamento ao editar um pagamento da série, alterar a frequência, excluir uma ocorrência ou encerrar a série.
 - Conferir que a geração automática não altera pagamentos antigos que já foram pagos.
 
 **Por que vem agora:** esta é a funcionalidade de negócio pedida para frequências semanais, mensais e anuais e depende da etapa 1.
@@ -107,8 +104,6 @@ Este arquivo é a fila oficial das próximas etapas. Vamos concluir cada etapa a
 
 ## Melhorias encontradas na revisão
 
-- Os `Scan` de `markPaymentAsPaid` e `getPaymentByID` esperam `frequency`, mas as consultas ainda não devolvem essa coluna.
-- O `UPDATE` de `updatePayment` precisa de uma vírgula antes de `frequency = $8`.
 - `getPayments` não verifica `rows.Err()` após percorrer as linhas.
 - O backend não valida todos os campos obrigatórios nem o conjunto permitido de status.
 - Datas inválidas podem chegar ao PostgreSQL e virar erro interno `500`.
