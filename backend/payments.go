@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -31,6 +32,51 @@ func isValidPaymentFrequency(frequency string) bool {
 	default:
 		return false
 	}
+}
+
+func validatePayment(payment *Payment) error {
+	payment.Description = strings.TrimSpace(payment.Description)
+	payment.Category = strings.TrimSpace(payment.Category)
+	payment.Responsible = strings.TrimSpace(payment.Responsible)
+	payment.Status = strings.TrimSpace(payment.Status)
+	payment.Frequency = strings.TrimSpace(payment.Frequency)
+	payment.DueDate = strings.TrimSpace(payment.DueDate)
+	payment.PaidAt = strings.TrimSpace(payment.PaidAt)
+
+	if payment.Description == "" {
+		return errors.New("Description is required")
+	}
+	if payment.Category == "" {
+		return errors.New("Category is required")
+	}
+	if payment.Responsible == "" {
+		return errors.New("Responsible is required")
+	}
+	if payment.Amount <= 0 {
+		return errors.New("Amount must be greater than zero")
+	}
+	if !isValidPaymentFrequency(payment.Frequency) {
+		return errors.New("Invalid payment frequency")
+	}
+
+	if _, err := time.Parse("2006-01-02", payment.DueDate); err != nil {
+		return errors.New("Due date must be a valid date in YYYY-MM-DD format")
+	}
+
+	switch payment.Status {
+	case "pending":
+		if payment.PaidAt != "" {
+			return errors.New("Paid date must be empty for pending payments")
+		}
+	case "paid":
+		if _, err := time.Parse("2006-01-02", payment.PaidAt); err != nil {
+			return errors.New("Paid date is required and must use YYYY-MM-DD format")
+		}
+	default:
+		return errors.New("Invalid payment status")
+	}
+
+	return nil
 }
 
 func paymentsHandler(w http.ResponseWriter, r *http.Request) {
@@ -109,23 +155,8 @@ func createPayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if payment.Description == "" {
-		http.Error(w, "Description is required", http.StatusBadRequest)
-		return
-	}
-
-	if payment.Amount <= 0 {
-		http.Error(w, "Amount must be greater than zero", http.StatusBadRequest)
-		return
-	}
-
-	if payment.Status == "" {
-		http.Error(w, "Status is required", http.StatusBadRequest)
-		return
-	}
-
-	if payment.DueDate == "" {
-		http.Error(w, "Due date is required", http.StatusBadRequest)
+	if err := validatePayment(&payment); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -382,18 +413,8 @@ func updatePayment(w http.ResponseWriter, r *http.Request, id int) {
 		return
 	}
 
-	if updatedPayment.Description == "" {
-		http.Error(w, "Description is required", http.StatusBadRequest)
-		return
-	}
-
-	if updatedPayment.Amount <= 0 {
-		http.Error(w, "Amount must be greater than zero", http.StatusBadRequest)
-		return
-	}
-
-	if updatedPayment.DueDate == "" {
-		http.Error(w, "Due date is required", http.StatusBadRequest)
+	if err := validatePayment(&updatedPayment); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
