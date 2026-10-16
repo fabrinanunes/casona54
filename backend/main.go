@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -11,6 +12,10 @@ func main() {
 		log.Fatalf("Database startup failed: %v", err)
 	}
 	defer db.Close()
+
+	if err := runMigrations(context.Background()); err != nil {
+		log.Fatalf("Database migration failed: %v", err)
+	}
 	startRecurringPaymentScheduler()
 
 	http.HandleFunc("/health", healthHandler)
