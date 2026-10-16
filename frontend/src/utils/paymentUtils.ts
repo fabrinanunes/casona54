@@ -4,6 +4,14 @@ import {
 
 import type { Payment } from "../types/payment";
 
+function toCents(amount: number): number {
+  return Math.round(amount * 100);
+}
+
+function fromCents(cents: number): number {
+  return cents / 100;
+}
+
 export function isPaymentOverdue(
   payment: Payment,
 ): boolean {
@@ -39,11 +47,12 @@ export function isPaymentOverdue(
 export function calculateTotalAmount(
   payments: Payment[],
 ): number {
-  return payments.reduce(
-    (total, payment) =>
-      total + payment.amount,
+  const totalInCents = payments.reduce(
+    (total, payment) => total + toCents(payment.amount),
     0,
   );
+
+  return fromCents(totalInCents);
 }
 
 export function calculatePaymentsByStatus(
@@ -114,83 +123,51 @@ export function calculatePaymentSummary(
 export function calculateCategoryTotals(
   payments: Payment[],
 ) {
-  return Object.values(
-    payments.reduce<
-      Record<
-        string,
-        {
-          category: string;
-          amount: number;
-        }
-      >
-    >(
-      (accumulator, payment) => {
-        if (
-          !accumulator[
-            payment.category
-          ]
-        ) {
-          accumulator[
-            payment.category
-          ] = {
-            category:
-              payment.category,
-            amount: 0,
-          };
-        }
+  const totalsInCents = payments.reduce<
+    Record<string, { category: string; amountInCents: number }>
+  >((accumulator, payment) => {
+    if (!accumulator[payment.category]) {
+      accumulator[payment.category] = {
+        category: payment.category,
+        amountInCents: 0,
+      };
+    }
 
-        accumulator[
-          payment.category
-        ].amount += payment.amount;
+    accumulator[payment.category].amountInCents += toCents(
+      payment.amount,
+    );
 
-        return accumulator;
-      },
-      {},
-    ),
-  ).sort(
-    (a, b) =>
-      b.amount - a.amount,
-  );
+    return accumulator;
+  }, {});
+
+  return Object.values(totalsInCents)
+    .sort((a, b) => b.amountInCents - a.amountInCents)
+    .map(({ category, amountInCents }) => ({
+      category,
+      amount: fromCents(amountInCents),
+    }));
 }
 
 export function calculateMonthlyTotals(
   payments: Payment[],
 ) {
-  const monthlyTotalsMap =
-    payments.reduce<
-      Record<string, number>
-    >(
-      (accumulator, payment) => {
-        const month =
-          payment.due_date.slice(
-            0,
-            7,
-          );
+  const monthlyTotalsInCents = payments.reduce<
+    Record<string, number>
+  >((accumulator, payment) => {
+    const month = payment.due_date.slice(0, 7);
 
-        accumulator[month] =
-          (accumulator[month] ?? 0) +
-          payment.amount;
+    accumulator[month] =
+      (accumulator[month] ?? 0) + toCents(payment.amount);
 
-        return accumulator;
-      },
-      {},
-    );
+    return accumulator;
+  }, {});
 
-  return Object.entries(
-    monthlyTotalsMap,
-  )
-    .map(
-      ([month, amount]) => ({
-        month,
-        amount,
-      }),
-    )
-    .sort(
-      (a, b) =>
-        a.month.localeCompare(
-          b.month,
-        ),
-    );
+  return Object.entries(monthlyTotalsInCents)
+    .map(([month, amountInCents]) => ({
+      month,
+      amount: fromCents(amountInCents),
+    }))
+    .sort((a, b) => a.month.localeCompare(b.month));
 }
 
 export function getPaymentCategories(
