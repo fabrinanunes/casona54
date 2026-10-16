@@ -12,20 +12,20 @@ Este arquivo é a fila oficial das próximas etapas. Vamos concluir cada etapa a
 
 **Por que vem primeiro:** a recorrência automática depende de cada pagamento guardar e devolver a frequência corretamente.
 
-### 2. Gerar pagamentos futuros para frequências recorrentes — em andamento
+### 2. Gerar pagamentos futuros para frequências recorrentes — concluída
 
 - Criar a regra de recorrência para pagamentos semanais, mensais e anuais; pagamentos `once` não geram outros pagamentos.
 - Proposta: manter sempre os próximos 12 meses gerados; preencher a série ao criá-la e repor diariamente pelo backend hospedado, sem depender do computador local ligado.
 - Guardar a relação entre a regra recorrente e cada pagamento gerado, com proteção contra geração duplicada.
 - Tratar calendário: meses com menos dias que o vencimento original, fevereiro e anos bissextos.
-- Definir e implementar o comportamento ao editar um pagamento da série, alterar a frequência, excluir uma ocorrência ou encerrar a série.
-- Conferir que a geração automática não altera pagamentos antigos que já foram pagos.
 - Implementação inicial: migration 006, criação transacional da regra e do primeiro pagamento, geração de até 12 meses e tentativa diária pelo backend.
-- Pendente: aplicar a migration 006 no banco local, validar os cenários de geração e decidir como editar ou encerrar uma série recorrente.
+- Migration 006 aplicada no banco local; geração mensal, semanal e comportamento `once` conferidos no frontend e no banco.
+- Commit da implementação: `a6a1f55 feat(payments): generate recurring payments`.
+- Duração configurável e exclusão/encerramento de uma série ficam para a etapa 12.
 
-**Por que vem agora:** esta é a funcionalidade de negócio pedida para frequências semanais, mensais e anuais e depende da etapa 1.
+**Por que veio nesta ordem:** a geração recorrente depende da frequência persistida na etapa 1; os testes básicos foram concluídos.
 
-### 3. Validar os dados de pagamento no backend
+### 3. Validar os dados de pagamento no backend — concluída
 
 - Aceitar somente os status previstos (`pending` e `paid`) em criação e edição.
 - Exigir descrição, categoria, responsável, vencimento e frequência; remover espaços nas pontas antes de validar.
@@ -35,15 +35,16 @@ Este arquivo é a fila oficial das próximas etapas. Vamos concluir cada etapa a
 
 **Por que vem antes de publicar:** a interface ajuda a evitar erros, mas qualquer cliente HTTP pode chamar a API diretamente.
 
-### 4. Garantir precisão monetária nos cálculos
+### 4. Garantir precisão monetária nos cálculos — concluída
 
-- Revisar o uso de `float64` no backend e `number` no frontend para somas e totais de valores monetários.
-- Escolher uma representação que evite erros de ponto flutuante nos cálculos e manter o contrato HTTP com valores em reais, como `12.34`.
+- Fazer as somas de totais gerais, por categoria e por mês usando centavos inteiros durante os cálculos no frontend.
+- Manter o valor em reais no contrato HTTP (por exemplo, `12.34`) e no banco `NUMERIC(12,2)`; converter centavos para reais ao retornar os totais para exibição.
+- O backend atualmente não soma valores: `float64` é usado para receber/enviar o JSON, enquanto o banco guarda `NUMERIC(12,2)`. Evitar uma refatoração ampla do tipo `Amount` sem necessidade de cálculo no servidor.
 - Conferir totais gerais, por categoria e por mês com valores que tenham centavos.
 
 **Por que está na fila:** o banco já usa `NUMERIC(12,2)`, mas os cálculos da aplicação ainda passam por tipos de ponto flutuante.
 
-### 5. Reforçar sessões e troca de senha
+### 5. Reforçar sessões e troca de senha — dispensada por decisão da usuária
 
 - Validar que a nova senha não esteja vazia e definir uma regra mínima de tamanho.
 - Decidir e implementar o que acontece com as sessões existentes quando a senha é alterada.
@@ -53,13 +54,13 @@ Este arquivo é a fila oficial das próximas etapas. Vamos concluir cada etapa a
 
 **Por que vem antes da hospedagem:** os dois celulares usarão autenticação por cookie e a aplicação será acessada pela internet.
 
-### 6. Automatizar e rastrear as migrações do banco
+### 6. Automatizar e rastrear as migrações do banco — em andamento
 
-- Criar um mecanismo simples para registrar quais migrações já foram executadas.
-- Fazer a aplicação falhar com uma mensagem clara se uma migração necessária estiver pendente ou falhar.
-- Documentar a ordem e o comando usados para aplicar migrações em desenvolvimento e produção.
+- Implementação concluída: o backend registra as migrations em `schema_migrations` e aplica automaticamente as pendentes na inicialização; em caso de falha, identifica a migration no erro e interrompe o início.
+- O README documenta o bootstrap de um banco local existente e a inicialização de um banco novo.
+- Pendente: validar a inicialização automática em um banco novo, confirmando a aplicação das migrations `001` a `006`.
 
-**Por que está na fila:** hoje as migrações são aplicadas manualmente, o que facilita esquecer uma etapa ao preparar outro ambiente.
+**Por que continua em andamento:** falta confirmar o fluxo completo em um banco vazio antes de encerrar a etapa.
 
 ### 7. Melhorar mensagens de erro e estados de carregamento no frontend
 
@@ -103,6 +104,33 @@ Este arquivo é a fila oficial das próximas etapas. Vamos concluir cada etapa a
 - Publicar e conferir login, pagamentos e recorrências nos dois celulares.
 
 **Por que fica por último:** publicação depende de as funcionalidades, segurança, experiência móvel e migrações estarem concluídas.
+
+### 12. Configurar duração e encerramento de pagamentos recorrentes — adicionada ao final
+
+- Permitir escolher no frontend a duração da recorrência em meses para frequências semanais, mensais e anuais (por exemplo: 3, 5, 6 ou 30 meses).
+- Persistir a duração ou a data final na regra de recorrência e fazer o gerador respeitar esse limite, inclusive nas execuções diárias.
+- Contar o vencimento inicial como o primeiro mês da duração; por exemplo, uma recorrência mensal de 3 meses gera 3 pagamentos. Para frequências semanal e anual, gerar somente vencimentos que caibam nessa mesma janela de meses.
+- Definir e implementar como editar uma ocorrência, alterar os dados/frequência da regra ou encerrar uma série sem deixar a regra e os pagamentos futuros inconsistentes.
+- Ao excluir uma ocorrência recorrente, remover do banco essa ocorrência e todas as posteriores, preservar as anteriores e desativar a regra para que o agendador não recrie os pagamentos excluídos.
+- Pedir confirmação no frontend antes de excluir a ocorrência e os pagamentos seguintes.
+
+**Por que entrou no final:** é uma nova configuração de recorrência solicitada depois do roteiro inicial e depende da geração recorrente da etapa 2.
+
+### 13. Restringir as opções de responsável — adicionada ao final
+
+- Trocar o campo de responsável na modal por uma seleção com somente `Fabrina` e `Eduardo`.
+- Validar também no backend que o responsável recebido seja uma dessas duas opções, para impedir valores diferentes enviados diretamente à API.
+- Conferir como tratar pagamentos já salvos com outro responsável antes de aplicar a restrição.
+
+**Por que entrou no final:** limita os responsáveis aos dois usuários que utilizarão o aplicativo.
+
+### 14. Formatar o valor como moeda brasileira durante a digitação — adicionada ao final
+
+- Na modal, exibir o valor digitado no formato de real, incluindo símbolo, separadores e sempre duas casas decimais (por exemplo, `R$ 12,40`).
+- Manter a conversão para o valor numérico em reais usado pela API e pelo backend (`R$ 12,40` representa `12.4`), sem enviar centavos (`1240`) nem a string formatada.
+- Conferir a edição de pagamentos existentes, a digitação no celular e valores com centavos terminados em zero.
+
+**Por que entrou no final:** a modal atualmente pode mostrar `12,4` quando a pessoa espera ver `R$ 12,40`.
 
 ## Melhorias encontradas na revisão
 
