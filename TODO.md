@@ -91,13 +91,13 @@ Este arquivo é a fila oficial das próximas etapas. Vamos concluir cada etapa a
 
 **Por que foi necessária:** isso evita consultas sem necessidade após uma requisição ser cancelada e melhora a estabilidade do serviço.
 
-### 10. Atualizar a documentação do projeto
+### 10. Atualizar a documentação do projeto — concluída
 
-- Atualizar `backend/README.md` para refletir as rotas reais, os campos atuais (`paid_at` e `frequency`) e os tipos de valor.
-- Documentar como iniciar frontend, backend e banco local, criar o admin e aplicar migrações.
-- Documentar o fluxo de recorrência depois que a etapa 2 estiver pronta.
+- `README.md` agora explica como iniciar banco, backend, usuário admin e frontend localmente.
+- `backend/README.md` documenta rotas e autenticação reais, campos e formatos da API, recorrências, migrations e limitações atuais de CORS/cookie para hospedagem.
+- `frontend/README.md` aponta para o guia principal e explica a configuração de `VITE_API_URL`, substituindo as instruções padrão do template Vite.
 
-**Por que vem antes de publicar:** a documentação deve descrever o comportamento final e permitir reconstruir o ambiente.
+**Por que veio antes de publicar:** a documentação deve descrever o comportamento atual e permitir reconstruir o ambiente.
 
 ### 11. Preparar e publicar a aplicação
 
@@ -148,4 +148,3 @@ Este arquivo é a fila oficial das próximas etapas. Vamos concluir cada etapa a
 
 - A configuração atual de CORS aponta para `localhost`; ela precisará ser configurável para a hospedagem.
 - O cookie de sessão ainda não configura `Secure`, necessário quando servido por HTTPS.
-- `backend/README.md` está desatualizado em relação às rotas e aos campos implementados.
