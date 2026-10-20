@@ -71,22 +71,25 @@ Este arquivo é a fila oficial das próximas etapas. Vamos concluir cada etapa a
 
 **Por que melhora o uso:** mensagens claras ajudam a pessoa a corrigir os dados ou tentar novamente quando há uma falha de conexão.
 
-### 8. Revisar a experiência nos celulares
+### 8. Revisar a experiência nos celulares — concluída
 
 - Conferir login, lista, filtros, modal e botões em telas estreitas.
 - Ajustar espaçamentos, campos e ações que ficarem difíceis de usar por toque.
 - Conferir especialmente o teclado decimal do celular no campo de valor.
+- Revisão visual confirmada pela usuária; sem ajustes adicionais necessários nesta etapa.
 
-**Por que está na fila:** o objetivo é usar a aplicação em dois celulares; a interface precisa funcionar bem neles antes da publicação.
+**Por que veio antes da publicação:** o objetivo é usar a aplicação em dois celulares; a interface precisa funcionar bem neles antes da hospedagem.
 
-### 9. Tratar erros e encerramento do backend
+### 9. Tratar erros e encerramento do backend — concluída
 
 - Passar `r.Context()` às consultas iniciadas por requisições HTTP, em vez de `context.Background()`.
 - Verificar `rows.Err()` depois de percorrer resultados em `getPayments`.
 - Configurar timeouts HTTP e encerramento gracioso do servidor.
 - Padronizar logs e respostas de erro sem devolver detalhes internos ao cliente.
+- A aplicação usa o contexto HTTP nas operações de banco iniciadas por requisições, verifica erros ao percorrer pagamentos e encerra o servidor e o agendador ao receber sinal de parada.
+- Encerramento e inicialização do servidor conferidos localmente pela usuária.
 
-**Por que está na fila:** isso evita consultas sem necessidade após uma requisição ser cancelada e melhora a estabilidade do serviço.
+**Por que foi necessária:** isso evita consultas sem necessidade após uma requisição ser cancelada e melhora a estabilidade do serviço.
 
 ### 10. Atualizar a documentação do projeto
 
@@ -119,7 +122,7 @@ Este arquivo é a fila oficial das próximas etapas. Vamos concluir cada etapa a
 
 ### 13. Restringir as opções de responsável — adicionada ao final
 
-- Trocar o campo de responsável na modal por uma seleção com somente `Fabrina` e `Eduardo`.
+- Trocar o campo de responsável na modal por uma seleção com somente `Fabrina` e `Eduardo`; não permitir outros valores digitados.
 - Validar também no backend que o responsável recebido seja uma dessas duas opções, para impedir valores diferentes enviados diretamente à API.
 - Conferir como tratar pagamentos já salvos com outro responsável antes de aplicar a restrição.
 
@@ -127,16 +130,22 @@ Este arquivo é a fila oficial das próximas etapas. Vamos concluir cada etapa a
 
 ### 14. Formatar o valor como moeda brasileira durante a digitação — adicionada ao final
 
-- Na modal, exibir o valor digitado no formato de real, incluindo símbolo, separadores e sempre duas casas decimais (por exemplo, `R$ 12,40`).
+- Na modal, formatar o valor como moeda brasileira enquanto a pessoa digita, sem esperar que o campo perca o foco; exibir símbolo, separadores e duas casas decimais (por exemplo, `R$ 12,40`).
 - Manter a conversão para o valor numérico em reais usado pela API e pelo backend (`R$ 12,40` representa `12.4`), sem enviar centavos (`1240`) nem a string formatada.
 - Conferir a edição de pagamentos existentes, a digitação no celular e valores com centavos terminados em zero.
 
 **Por que entrou no final:** a modal atualmente pode mostrar `12,4` quando a pessoa espera ver `R$ 12,40`.
 
+### 15. Melhorar a exibição das opções de frequência no celular — adicionada ao final
+
+- Aumentar a legibilidade e a área de toque das opções de frequência na modal.
+- Fazer com que a lista de opções apareça logo abaixo do campo de frequência em telas estreitas.
+- Conferir o comportamento do seletor nativo no celular; se ele não permitir controlar a posição ou o tamanho da lista, avaliar uma lista customizada acessível.
+
+**Por que entrou no final:** no celular, as opções atuais ficam pequenas e não aparecem logo abaixo do campo de frequência.
+
 ## Melhorias encontradas na revisão
 
-- `getPayments` não verifica `rows.Err()` após percorrer as linhas.
-- O backend usa `context.Background()` nas consultas de requisições, em vez do contexto da própria requisição.
 - A configuração atual de CORS aponta para `localhost`; ela precisará ser configurável para a hospedagem.
 - O cookie de sessão ainda não configura `Secure`, necessário quando servido por HTTPS.
 - `backend/README.md` está desatualizado em relação às rotas e aos campos implementados.
