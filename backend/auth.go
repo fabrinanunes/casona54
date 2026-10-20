@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
@@ -47,7 +46,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	var passwordHash string
 
 	err = db.QueryRow(
-		context.Background(),
+		r.Context(),
 		`
 			SELECT id, password_hash
 			FROM users
@@ -87,7 +86,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	expiresAt := time.Now().Add(24 * time.Hour)
 
 	_, err = db.Exec(
-		context.Background(),
+		r.Context(),
 		`
 			INSERT INTO sessions (
 				user_id,
@@ -143,7 +142,7 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session_token")
 	if err == nil {
 		_, _ = db.Exec(
-			context.Background(),
+			r.Context(),
 			`
 				DELETE FROM sessions
 				WHERE token = $1
@@ -178,7 +177,7 @@ func authenticateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = db.QueryRow(
-		context.Background(),
+		r.Context(),
 		`
 			SELECT u.id, u.email
 			FROM users u
@@ -219,7 +218,7 @@ func changePasswordHandler(w http.ResponseWriter, r *http.Request) {
 	var passwordHash string
 
 	err = db.QueryRow(
-		context.Background(),
+		r.Context(),
 		`
 			SELECT u.id, u.password_hash
 			FROM users u
@@ -270,7 +269,7 @@ func changePasswordHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, err = db.Exec(
-		context.Background(),
+		r.Context(),
 		`
 			UPDATE users
 			SET password_hash = $1

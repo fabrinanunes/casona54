@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"log"
@@ -92,7 +91,7 @@ func paymentsHandler(w http.ResponseWriter, r *http.Request) {
 
 func getPayments(w http.ResponseWriter, r *http.Request) {
 	rows, err := db.Query(
-		context.Background(),
+		r.Context(),
 		`
 			SELECT
 				id,
@@ -140,6 +139,12 @@ func getPayments(w http.ResponseWriter, r *http.Request) {
 		}
 
 		payments = append(payments, payment)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Printf("failed to iterate payments: %v", err)
+		http.Error(w, "Failed to get payments", http.StatusInternalServerError)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -347,21 +352,21 @@ func paymentByIDHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet:
-		getPaymentByID(w, id)
+	getPaymentByID(w, r, id)
 	case http.MethodPut:
 		updatePayment(w, r, id)
 	case http.MethodDelete:
-		deletePayment(w, id)
+		deletePayment(w, r, id)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
-func getPaymentByID(w http.ResponseWriter, id int) {
+func getPaymentByID(w http.ResponseWriter, r *http.Request, id int) {
 	var payment Payment
 
 	err := db.QueryRow(
-		context.Background(),
+			r.Context(),
 		`
 			SELECT
 				id,
@@ -424,7 +429,7 @@ func updatePayment(w http.ResponseWriter, r *http.Request, id int) {
 	}
 
 	err = db.QueryRow(
-		context.Background(),
+			r.Context(),
 		`
 			UPDATE payments
 			SET
@@ -473,9 +478,9 @@ func updatePayment(w http.ResponseWriter, r *http.Request, id int) {
 	json.NewEncoder(w).Encode(updatedPayment)
 }
 
-func deletePayment(w http.ResponseWriter, id int) {
+func deletePayment(w http.ResponseWriter, r *http.Request, id int) {
 	commandTag, err := db.Exec(
-		context.Background(),
+		r.Context(),
 		`
 			DELETE FROM payments
 			WHERE id = $1

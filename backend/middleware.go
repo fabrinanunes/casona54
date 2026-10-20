@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"net/http"
 	"time"
@@ -22,7 +21,7 @@ func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		var expiresAt time.Time
 
 		err = db.QueryRow(
-			context.Background(),
+			r.Context(),
 			`
 				SELECT user_id, expires_at
 				FROM sessions

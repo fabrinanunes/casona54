@@ -3,8 +3,13 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
 func main() {
@@ -16,23 +21,62 @@ func main() {
 	if err := runMigrations(context.Background()); err != nil {
 		log.Fatalf("Database migration failed: %v", err)
 	}
-	startRecurringPaymentScheduler()
 
-	http.HandleFunc("/health", healthHandler)
-	http.HandleFunc("/payments", authMiddleware(paymentsHandler))
-	http.HandleFunc("/payments/", authMiddleware(paymentByIDHandler))
-	http.HandleFunc("/login", loginHandler)
-	http.HandleFunc("/logout", logoutHandler)
-	http.HandleFunc("/me", authMiddleware(authenticateHandler))
-	http.HandleFunc("/me/password", authMiddleware(changePasswordHandler))
+	mux := http.NewServeMux()
+	mux.HandleFunc("/health", healthHandler)
+	mux.HandleFunc("/payments", authMiddleware(paymentsHandler))
+	mux.HandleFunc("/payments/", authMiddleware(paymentByIDHandler))
+	mux.HandleFunc("/login", loginHandler)
+	mux.HandleFunc("/logout", logoutHandler)
+	mux.HandleFunc("/me", authMiddleware(authenticateHandler))
+	mux.HandleFunc("/me/password", authMiddleware(changePasswordHandler))
 
-	log.Println("Server is running on port 8080")
+	server := &http.Server{
+		Addr:              ":8080",
+		Handler:           corsMiddleware(mux),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
 
-	if err := http.ListenAndServe(
-		":8080",
-		corsMiddleware(http.DefaultServeMux),
-	); err != nil {
-		log.Printf("Server stopped: %v", err)
+	shutdownContext, stop := signal.NotifyContext(
+		context.Background(),
+		os.Interrupt,
+		syscall.SIGTERM,
+	)
+	defer stop()
+
+	startRecurringPaymentScheduler(shutdownContext)
+
+	serverErrors := make(chan error, 1)
+
+	go func() {
+		log.Println("Server is running on port 8080")
+		serverErrors <- server.ListenAndServe()
+	}()
+
+	select {
+	case err := <-serverErrors:
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Printf("HTTP server failed: %v", err)
+		}
+
+	case <-shutdownContext.Done():
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		if err := server.Shutdown(ctx); err != nil {
+			log.Printf("Graceful shutdown failed: %v", err)
+
+			if closeErr := server.Close(); closeErr != nil {
+				log.Printf("Forced server close failed: %v", closeErr)
+			}
+		}
+
+		if err := <-serverErrors; err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Printf("HTTP server stopped with error: %v", err)
+		}
 	}
 }
 
@@ -43,9 +87,3 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 		"status": "ok",
 	})
 }
-
-// http.HandleFunc registra uma rota para o endpoint "/health" e define a função que será chamada quando uma requisição for feita para esse endpoint.
-
-// http.ReponseWrite e é uma interface que permite escrever a resposta HTTP. Ele é usado para enviar dados de volta ao cliente que fez a requisição.
-
-// *http.Request é uma struct que representa uma requisição HTTP recebida pelo servidor. Ele contém informações sobre a requisição, como o método HTTP, cabeçalhos, corpo da requisição, etc.
