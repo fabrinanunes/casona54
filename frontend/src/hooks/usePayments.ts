@@ -12,33 +12,42 @@ import type {
   Payment,
   PaymentFormData,
 } from "../types/payment";
+import { getUserFacingError } from "../services/api";
 
 type UsePaymentsResult = {
   payments: Payment[];
   isLoading: boolean;
-  error: boolean;
+  error: string | null;
   create: (payment: PaymentFormData) => Promise<void>;
   update: (id: number, payment: PaymentFormData) => Promise<void>;
   remove: (id: number) => Promise<void>;
   refresh: () => Promise<void>;
   markAsPaid: (id: number) => Promise<void>;
+  isRefreshing: boolean;
 };
 
 export function usePayments(): UsePaymentsResult {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);const [isRefreshing, setIsRefreshing] = useState(false);
 
   const refresh = useCallback(async () => {
-    try {
-      setError(false);
+    setIsRefreshing(true);
 
+    try {
       const data = await getPayments();
 
       setPayments(data);
+      setError(null);
     } catch (error) {
-      console.error("Error fetching payments:", error);
-      setError(true);
+      setError(
+        getUserFacingError(
+          error,
+          "Não foi possível carregar os pagamentos. Confira sua conexão.",
+        ),
+      );
+    } finally {
+      setIsRefreshing(false);
     }
   }, []);
 
@@ -51,13 +60,18 @@ export function usePayments(): UsePaymentsResult {
 
         if (isMounted) {
           setPayments(data);
-          setError(false);
+          setError(null);
         }
       } catch (error) {
         console.error("Error fetching payments:", error);
 
         if (isMounted) {
-          setError(true);
+          setError(
+            getUserFacingError(
+              error,
+              "Não foi possível carregar os pagamentos. Confira sua conexão.",
+            ),
+          );
         }
       } finally {
         if (isMounted) {
@@ -114,5 +128,6 @@ export function usePayments(): UsePaymentsResult {
     remove,
     refresh,
     markAsPaid,
+    isRefreshing,
   };
 }

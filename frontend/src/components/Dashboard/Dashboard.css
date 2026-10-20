@@ -357,6 +357,11 @@
   color: #2563eb;
 }
 
+.payment-card__actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .payment-card__actions .payment-card__delete:hover {
   border-color: #dc2626;
   color: #b42318;
@@ -399,6 +404,41 @@
   text-align: center;
   color: #8a93a3;
   font-size: 13px;
+}
+
+.dashboard__load-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 24px;
+  color: #b42318;
+  text-align: center;
+}
+
+.dashboard__load-error p {
+  margin: 0;
+  font-size: 13px;
+}
+
+.dashboard__load-error button {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid #d9dee8;
+  border-radius: 6px;
+  background: white;
+  color: #374151;
+  cursor: pointer;
+}
+
+.dashboard__load-error button:hover:not(:disabled) {
+  border-color: #2563eb;
+  color: #2563eb;
+}
+
+.dashboard__load-error button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 /* Mobile */

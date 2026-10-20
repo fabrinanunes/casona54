@@ -34,18 +34,31 @@ import {
 } from "../../utils/paymentFilterUtils";
 
 import "./Dashboard.css";
+import { getUserFacingError } from "../../services/api";
 
 type DashboardProps = {
   onLogout: () => Promise<void>;
 };
 
 export default function Dashboard({ onLogout }: DashboardProps) {
-  const { payments, isLoading, error, create, update, remove, markAsPaid } =
-    usePayments();
+  const {
+    payments,
+    isLoading,
+    isRefreshing,
+    error,
+    create,
+    update,
+    remove,
+    refresh,
+    markAsPaid,
+  } = usePayments();
   const paymentForm = usePaymentForm();
   const [isSaving, setIsSaving] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [markingPaymentId, setMarkingPaymentId] = useState<number | null>(null);
+  const [deletingPaymentId, setDeletingPaymentId] = useState<number | null>(
+    null,
+  );
 
   const [filters, setFilters] = useState<PaymentFilters>({
     status: "all",
@@ -113,7 +126,12 @@ export default function Dashboard({ onLogout }: DashboardProps) {
       paymentForm.close();
     } catch (error) {
       console.error("Error saving payment:", error);
-      setActionError("Não foi possível salvar o pagamento. Tente novamente.");
+      setActionError(
+        getUserFacingError(
+          error,
+          "Não foi possível salvar o pagamento. Confira sua conexão e tente novamente.",
+        ),
+      );
     } finally {
       setIsSaving(false);
     }
@@ -127,12 +145,20 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     if (!confirmed) return;
 
     setActionError(null);
+    setDeletingPaymentId(id);
 
     try {
       await remove(id);
     } catch (error) {
       console.error("Error deleting payment:", error);
-      setActionError("Não foi possível excluir o pagamento. Tente novamente.");
+      setActionError(
+        getUserFacingError(
+          error,
+          "Não foi possível excluir o pagamento. Confira sua conexão e tente novamente.",
+        ),
+      );
+    } finally {
+      setDeletingPaymentId(null);
     }
   };
 
@@ -145,7 +171,10 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     } catch (error) {
       console.error("Error marking payment as paid:", error);
       setActionError(
-        "Não foi possível marcar o pagamento como pago. Tente novamente.",
+        getUserFacingError(
+          error,
+          "Não foi possível marcar o pagamento como pago. Confira sua conexão e tente novamente.",
+        ),
       );
     } finally {
       setMarkingPaymentId(null);
@@ -165,9 +194,9 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         </button>
       </header>
 
-      {(error || actionError) && (
-        <div className="dashboard__error">
-          {actionError ?? "Não foi possível carregar os pagamentos."}
+      {actionError && (
+        <div className="dashboard__error" role="alert">
+          {actionError}
         </div>
       )}
 
@@ -389,7 +418,21 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         </div>
 
         {isLoading ? (
-          <div className="dashboard__loading">Carregando pagamentos...</div>
+          <div className="dashboard__loading" role="status">
+            Carregando pagamentos...
+          </div>
+        ) : error ? (
+          <div className="dashboard__load-error" role="alert">
+            <p>{error}</p>
+
+            <button
+              type="button"
+              disabled={isRefreshing}
+              onClick={() => void refresh()}
+            >
+              {isRefreshing ? "Tentando novamente..." : "Tentar novamente"}
+            </button>
+          </div>
         ) : sortedPayments.length === 0 ? (
           <div className="dashboard__empty">Nenhum pagamento encontrado.</div>
         ) : (
@@ -459,6 +502,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                       <button
                         type="button"
                         className="payment-card__delete"
+                        disabled={deletingPaymentId !== null}
                         onClick={() =>
                           void handleDeletePayment(
                             payment.id,
@@ -466,7 +510,9 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                           )
                         }
                       >
-                        Excluir
+                        {deletingPaymentId === payment.id
+                          ? "Excluindo..."
+                          : "Excluir"}
                       </button>
                     </div>
                   </div>
