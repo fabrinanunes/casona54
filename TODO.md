@@ -54,21 +54,22 @@ Este arquivo é a fila oficial das próximas etapas. Vamos concluir cada etapa a
 
 **Por que vem antes da hospedagem:** os dois celulares usarão autenticação por cookie e a aplicação será acessada pela internet.
 
-### 6. Automatizar e rastrear as migrações do banco — em andamento
+### 6. Automatizar e rastrear as migrações do banco — concluída
 
 - Implementação concluída: o backend registra as migrations em `schema_migrations` e aplica automaticamente as pendentes na inicialização; em caso de falha, identifica a migration no erro e interrompe o início.
 - O README documenta o bootstrap de um banco local existente e a inicialização de um banco novo.
-- Pendente: validar a inicialização automática em um banco novo, confirmando a aplicação das migrations `001` a `006`.
+- Banco novo validado: as migrations `001` a `006` foram aplicadas, e uma segunda inicialização não reaplicou as migrations.
 
-**Por que continua em andamento:** falta confirmar o fluxo completo em um banco vazio antes de encerrar a etapa.
+**Por que foi necessária:** o histórico de migrações torna a preparação de bancos existentes e novos mais segura e previsível.
 
-### 7. Melhorar mensagens de erro e estados de carregamento no frontend
+### 7. Melhorar mensagens de erro e estados de carregamento no frontend — concluída
 
 - Fazer `apiRequest` apresentar mensagens úteis da API, sem expor detalhes internos do servidor.
-- Mostrar estados de carregamento e erro na verificação inicial de sessão; hoje `App` retorna `null` enquanto carrega.
+- Mostrar estados de carregamento e erro na verificação inicial de sessão, com opção para tentar novamente.
 - Conferir mensagens de erro ao criar, editar, excluir e marcar um pagamento como pago.
+- A tela de pagamentos informa falhas ao carregar e permite tentar novamente; o login diferencia credenciais inválidas de falha de conexão.
 
-**Por que melhora o uso:** quando algo falha, a pessoa precisa saber se deve corrigir um campo, entrar novamente ou tentar mais tarde.
+**Por que melhora o uso:** mensagens claras ajudam a pessoa a corrigir os dados ou tentar novamente quando há uma falha de conexão.
 
 ### 8. Revisar a experiência nos celulares
 
@@ -135,11 +136,6 @@ Este arquivo é a fila oficial das próximas etapas. Vamos concluir cada etapa a
 ## Melhorias encontradas na revisão
 
 - `getPayments` não verifica `rows.Err()` após percorrer as linhas.
-- O backend não valida todos os campos obrigatórios nem o conjunto permitido de status.
-- Datas inválidas podem chegar ao PostgreSQL e virar erro interno `500`.
-- A aplicação não mostra conteúdo durante a verificação inicial da sessão.
-- O cliente HTTP transforma erros em uma mensagem genérica que não ajuda a corrigir a solicitação.
-- Os cálculos de valores monetários usam ponto flutuante no backend e no frontend.
 - O backend usa `context.Background()` nas consultas de requisições, em vez do contexto da própria requisição.
 - A configuração atual de CORS aponta para `localhost`; ela precisará ser configurável para a hospedagem.
 - O cookie de sessão ainda não configura `Secure`, necessário quando servido por HTTPS.
