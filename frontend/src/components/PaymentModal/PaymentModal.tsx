@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { PaymentResponsible } from "../../constants/responsibleConstants";
 
@@ -43,11 +43,25 @@ function PaymentModal({
   error,
 }: PaymentModalProps) {
   const amountInputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const [isAmountFocused, setIsAmountFocused] = useState(false);
   const [isFrequencyOptionsOpen, setIsFrequencyOptionsOpen] = useState(false);
   const frequencyButtonRef = useRef<HTMLButtonElement>(null);
 
   const isEdit = mode === "edit";
+
+  useEffect(() => {
+    const previouslyFocused =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+
+    dialogRef.current
+      ?.querySelector<HTMLElement>("#payment-description")
+      ?.focus();
+
+    return () => previouslyFocused?.focus();
+  }, []);
 
   const durationUnit = {
     [PaymentFrequency.ONCE]: "vezes",
@@ -76,10 +90,48 @@ function PaymentModal({
   return (
     <div className="payment-modal-overlay">
       <div
+        ref={dialogRef}
         className="payment-modal"
         role="dialog"
         aria-modal="true"
         aria-labelledby="payment-modal-title"
+        tabIndex={-1}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            if (isFrequencyOptionsOpen) {
+              setIsFrequencyOptionsOpen(false);
+              frequencyButtonRef.current?.focus();
+            } else if (!isSaving) {
+              onClose();
+            }
+            return;
+          }
+
+          if (event.key !== "Tab") return;
+
+          const focusableElements = Array.from(
+            dialogRef.current?.querySelectorAll<HTMLElement>(
+              'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+            ) ?? [],
+          ).filter((element) => !element.closest("[hidden]"));
+
+          if (focusableElements.length === 0) {
+            event.preventDefault();
+            dialogRef.current?.focus();
+            return;
+          }
+
+          const firstElement = focusableElements[0];
+          const lastElement = focusableElements[focusableElements.length - 1];
+
+          if (event.shiftKey && document.activeElement === firstElement) {
+            event.preventDefault();
+            lastElement.focus();
+          } else if (!event.shiftKey && document.activeElement === lastElement) {
+            event.preventDefault();
+            firstElement.focus();
+          }
+        }}
       >
         <div className="payment-modal__header">
           <div>
@@ -175,6 +227,7 @@ function PaymentModal({
             className="payment-modal__field"
             onKeyDown={(event) => {
               if (event.key === "Escape" && isFrequencyOptionsOpen) {
+                event.stopPropagation();
                 setIsFrequencyOptionsOpen(false);
                 frequencyButtonRef.current?.focus();
               }

@@ -26,7 +26,7 @@ func main() {
 	mux.HandleFunc("/health", healthHandler)
 	mux.HandleFunc("/payments", authMiddleware(paymentsHandler))
 	mux.HandleFunc("/payments/", authMiddleware(paymentByIDHandler))
-	mux.HandleFunc("/login", loginHandler)
+	mux.HandleFunc("/login", loginRateLimitMiddleware(loginHandler))
 	mux.HandleFunc("/logout", logoutHandler)
 	mux.HandleFunc("/me", authMiddleware(authenticateHandler))
 	mux.HandleFunc("/me/password", authMiddleware(changePasswordHandler))

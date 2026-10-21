@@ -172,8 +172,7 @@ func getPayments(w http.ResponseWriter, r *http.Request) {
 func createPayment(w http.ResponseWriter, r *http.Request) {
 	var payment Payment
 
-	if err := json.NewDecoder(r.Body).Decode(&payment); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+	if !decodeJSONRequest(w, r, &payment, "Invalid request body") {
 		return
 	}
 
@@ -432,9 +431,7 @@ func getPaymentByID(w http.ResponseWriter, r *http.Request, id int) {
 func updatePayment(w http.ResponseWriter, r *http.Request, id int) {
 	var updatedPayment Payment
 
-	err := json.NewDecoder(r.Body).Decode(&updatedPayment)
-	if err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+	if !decodeJSONRequest(w, r, &updatedPayment, "Invalid request body") {
 		return
 	}
 
@@ -443,8 +440,41 @@ func updatePayment(w http.ResponseWriter, r *http.Request, id int) {
 		return
 	}
 
-	err = db.QueryRow(
-		r.Context(),
+	ctx := r.Context()
+	tx, err := db.Begin(ctx)
+	if err != nil {
+		log.Printf("failed to begin payment update transaction: %v", err)
+		http.Error(w, "Failed to update payment", http.StatusInternalServerError)
+		return
+	}
+	defer tx.Rollback(ctx)
+
+	var currentFrequency string
+	var isRecurring bool
+	err = tx.QueryRow(
+		ctx,
+		`SELECT frequency, recurrence_rule_id IS NOT NULL FROM payments WHERE id = $1 FOR UPDATE`,
+		id,
+	).Scan(&currentFrequency, &isRecurring)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			http.Error(w, "Payment not found", http.StatusNotFound)
+			return
+		}
+
+		log.Printf("failed to load payment before update: %v", err)
+		http.Error(w, "Failed to update payment", http.StatusInternalServerError)
+		return
+	}
+	if updatedPayment.Frequency != currentFrequency {
+		http.Error(w, "Payment frequency cannot be changed during edit", http.StatusBadRequest)
+		return
+	}
+	updatedPayment.Frequency = currentFrequency
+	updatedPayment.IsRecurring = isRecurring
+
+	err = tx.QueryRow(
+		ctx,
 		`
 			UPDATE payments
 			SET
@@ -462,9 +492,8 @@ func updatePayment(w http.ResponseWriter, r *http.Request, id int) {
 							(NOW() AT TIME ZONE 'America/Sao_Paulo')::date
 						)
 					ELSE NULL
-					END,
-				frequency = $8
-			WHERE id = $9
+						END
+			WHERE id = $8
 			RETURNING id
 		`,
 		updatedPayment.Description,
@@ -474,7 +503,6 @@ func updatePayment(w http.ResponseWriter, r *http.Request, id int) {
 		updatedPayment.Responsible,
 		updatedPayment.Status,
 		updatedPayment.PaidAt,
-		updatedPayment.Frequency,
 		id,
 	).Scan(&updatedPayment.ID)
 
@@ -485,6 +513,11 @@ func updatePayment(w http.ResponseWriter, r *http.Request, id int) {
 		}
 
 		log.Printf("failed to update payment: %v", err)
+		http.Error(w, "Failed to update payment", http.StatusInternalServerError)
+		return
+	}
+	if err := tx.Commit(ctx); err != nil {
+		log.Printf("failed to commit payment update: %v", err)
 		http.Error(w, "Failed to update payment", http.StatusInternalServerError)
 		return
 	}

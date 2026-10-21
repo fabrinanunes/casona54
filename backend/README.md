@@ -86,7 +86,7 @@ Criação e edição validam os campos no backend. Pagamentos pendentes não pod
 
 ### Sessão
 
-O login recebe `email` e `password`. Em caso de sucesso, a API define o cookie `session_token` como `HttpOnly`, com validade de 24 horas. As rotas protegidas exigem esse cookie. O logout remove a sessão.
+O login recebe `email` e `password`. Em caso de sucesso, a API define o cookie `session_token` como `HttpOnly`, com validade de 24 horas. As rotas protegidas exigem esse cookie. O logout remove a sessão. O login limita a 10 tentativas por IP a cada 15 minutos e os corpos JSON têm limite de 64 KiB. O limitador é local ao processo e usa o IP da conexão; atrás de proxy, configure limitação equivalente no proxy/ingress ou uma forma segura de reconhecer o IP original. Não confie diretamente em `X-Forwarded-For` enviado pelo cliente.
 
 ## Rotas
 
@@ -122,7 +122,7 @@ docker compose -f backend/docker-compose.yml exec -T postgres \
 
 ### Banco local existente sem histórico de migrations
 
-Use este procedimento somente se as migrations correspondentes já foram aplicadas manualmente e as tabelas/colunas já existem. Ele registra o histórico sem executar novamente os arquivos:
+Use este procedimento somente para um banco cuja estrutura foi criada manualmente com as migrations `001` a `006`. O comando registra exatamente essas versões; se outras migrations também já tiverem sido executadas manualmente, inclua seus nomes na lista antes de iniciar a API. Não registre migrations cujo SQL ainda não foi aplicado:
 
 ```sh
 docker compose -f backend/docker-compose.yml exec -T postgres \
@@ -134,7 +134,7 @@ Não registre uma migration como aplicada se o SQL dela ainda não foi aplicado 
 
 ### Adicionar uma migration
 
-1. Crie um novo arquivo SQL em `backend/migrations/` com o próximo prefixo numérico, por exemplo `008_add_example_column.sql`.
+1. Crie um novo arquivo SQL em `backend/migrations/` com o próximo prefixo numérico, por exemplo `009_add_example_column.sql`.
 2. Não altere migrations que já foram aplicadas em algum banco; crie um novo arquivo para cada mudança de schema.
 3. Inicie o backend para aplicar e registrar a migration.
 4. Consulte `schema_migrations` para confirmar o registro.

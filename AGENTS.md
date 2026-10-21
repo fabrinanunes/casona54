@@ -10,6 +10,8 @@ Casona54 is a household finance application in a monorepo, with a React + TypeSc
 
 ### Frontend
 
+Use Node.js 20.19+, 22.13+, or 24+, as specified by `frontend/.nvmrc` and `frontend/package.json`.
+
 Run from `frontend/`:
 
 ```sh

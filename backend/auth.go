@@ -31,9 +31,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	var loginRequest LoginRequest
 
-	err := json.NewDecoder(r.Body).Decode(&loginRequest)
-	if err != nil {
-		http.Error(w, "invalid request payload", http.StatusBadRequest)
+	if !decodeJSONRequest(w, r, &loginRequest, "invalid request payload") {
 		return
 	}
 
@@ -45,7 +43,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	var userID int
 	var passwordHash string
 
-	err = db.QueryRow(
+	err := db.QueryRow(
 		r.Context(),
 		`
 			SELECT id, password_hash
@@ -241,10 +239,7 @@ func changePasswordHandler(w http.ResponseWriter, r *http.Request) {
 
 	var request ChangePasswordRequest
 
-	err = json.NewDecoder(r.Body).Decode(&request)
-
-	if err != nil {
-		http.Error(w, "invalid request payload", http.StatusBadRequest)
+	if !decodeJSONRequest(w, r, &request, "invalid request payload") {
 		return
 	}
 

@@ -36,10 +36,19 @@ async function getApiErrorMessage(
     return "O registro solicitado não foi encontrado.";
   }
 
-  if (response.status === 400) {
+  if (response.status === 413) {
     return (
       validationMessages[responseMessage] ??
-      "Confira os dados informados e tente novamente."
+      "O conteúdo enviado é muito grande."
+    );
+  }
+
+  if (response.status === 400 || response.status === 429) {
+    return (
+      validationMessages[responseMessage] ??
+      (response.status === 429
+        ? "Muitas tentativas. Aguarde antes de tentar novamente."
+        : "Confira os dados informados e tente novamente.")
     );
   }
 

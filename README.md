@@ -11,7 +11,7 @@ Aplicação de controle financeiro da casa, organizada como monorepo.
 
 - Docker com Docker Compose.
 - Go.
-- Node.js e npm.
+- Node.js e npm. Use a versão indicada em `frontend/.nvmrc`; as dependências atuais exigem Node 20.19+, 22.13+ ou 24+.
 
 ## Rodar localmente
 
