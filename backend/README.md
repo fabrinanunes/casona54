@@ -75,7 +75,7 @@ Os objetos de pagamento usam estes campos JSON:
 | `amount` | número | Valor em reais, por exemplo `12.34` para R$ 12,34. |
 | `due_date` | string `YYYY-MM-DD` | Data de vencimento. |
 | `category` | string | Categoria do pagamento. |
-| `responsible` | string | Responsável informado no pagamento. |
+| `responsible` | string | Responsável informado no pagamento. Aceita somente as opções Fabrina ou Eduardo |
 | `status` | string | `pending` ou `paid`. |
 | `paid_at` | string `YYYY-MM-DD` ou vazia | Data do pagamento; vazia quando pendente. |
 | `frequency` | string | `once`, `weekly`, `monthly` ou `yearly`. |

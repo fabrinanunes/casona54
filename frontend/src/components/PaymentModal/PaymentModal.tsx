@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
+import { PaymentResponsible } from "../../constants/responsibleConstants";
 
 import {
   PaymentStatus,
@@ -232,9 +233,8 @@ function PaymentModal({
           <div className="payment-modal__field">
             <label htmlFor="payment-responsible">Responsável</label>
 
-            <input
+            <select
               id="payment-responsible"
-              type="text"
               value={payment.responsible}
               required
               disabled={isSaving}
@@ -244,7 +244,17 @@ function PaymentModal({
                   responsible: event.target.value,
                 })
               }
-            />
+            >
+              <option value="" disabled>
+                Selecione uma pessoa
+              </option>
+
+              {Object.values(PaymentResponsible).map((responsible) => (
+                <option key={responsible} value={responsible}>
+                  {responsible}
+                </option>
+              ))}
+            </select>
           </div>
 
           {isEdit && (

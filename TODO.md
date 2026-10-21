@@ -128,11 +128,13 @@ Este arquivo é a fila oficial das próximas etapas. Vamos concluir cada etapa a
 
 **Por que veio nesta ordem:** é uma nova configuração de recorrência solicitada depois do roteiro inicial e depende da geração recorrente da etapa 2.
 
-### 13. Restringir as opções de responsável — adicionada ao final
+### 13. Restringir as opções de responsável — concluída
 
 - Trocar o campo de responsável na modal por uma seleção com somente `Fabrina` e `Eduardo`; não permitir outros valores digitados.
 - Validar também no backend que o responsável recebido seja uma dessas duas opções, para impedir valores diferentes enviados diretamente à API.
 - Conferir como tratar pagamentos já salvos com outro responsável antes de aplicar a restrição.
+- Implementado: a modal usa as opções definidas em `responsibleConstants.ts`, e a API rejeita responsáveis diferentes tanto na criação quanto na edição.
+- A documentação do backend agora registra as opções aceitas.
 
 **Por que entrou no final:** limita os responsáveis aos dois usuários que utilizarão o aplicativo.
 

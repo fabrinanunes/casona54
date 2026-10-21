@@ -36,6 +36,15 @@ func isValidPaymentFrequency(frequency string) bool {
 	}
 }
 
+func isValidPaymentResponsible(responsible string) bool {
+	switch responsible {
+	case "Fabrina", "Eduardo":
+		return true
+	default:
+		return false
+	}
+}
+
 func validatePayment(payment *Payment) error {
 	payment.Description = strings.TrimSpace(payment.Description)
 	payment.Category = strings.TrimSpace(payment.Category)
@@ -53,6 +62,9 @@ func validatePayment(payment *Payment) error {
 	}
 	if payment.Responsible == "" {
 		return errors.New("Responsible is required")
+	}
+	if !isValidPaymentResponsible(payment.Responsible) {
+		return errors.New("Invalid payment responsible")
 	}
 	if payment.Amount <= 0 {
 		return errors.New("Amount must be greater than zero")

@@ -16,4 +16,5 @@ export const validationMessages: Record<string, string> = {
   "Paid date is required and must use YYYY-MM-DD format":
     "Informe uma data de pagamento válida para um pagamento pago.",
   "Invalid payment ID": "O identificador do pagamento é inválido.",
+  "Invalid payment responsible": "Selecione Fabrina ou Eduardo.",
 };
