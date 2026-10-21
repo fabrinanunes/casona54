@@ -82,6 +82,72 @@
   font-weight: 600;
 }
 
+.payment-modal__field-label {
+  color: #374151;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.payment-modal__frequency-trigger {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  border: 1px solid #d9dee8;
+  border-radius: 6px;
+  background: white;
+  color: #374151;
+  text-align: left;
+  cursor: pointer;
+}
+
+.payment-modal__frequency-trigger:focus-visible,
+.payment-modal__frequency-option:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.payment-modal__frequency-trigger:disabled,
+.payment-modal__frequency-option:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.payment-modal__frequency-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid #d9dee8;
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.1);
+}
+
+.payment-modal__frequency-options[hidden] {
+  display: none;
+}
+
+.payment-modal__frequency-option {
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid #d9dee8;
+  border-radius: 6px;
+  background: white;
+  color: #374151;
+  text-align: left;
+  cursor: pointer;
+}
+
+.payment-modal__frequency-option[aria-pressed="true"] {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
 .payment-modal__field input,
 .payment-modal__field select {
   height: 42px;

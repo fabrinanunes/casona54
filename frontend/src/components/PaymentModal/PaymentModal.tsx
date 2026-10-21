@@ -44,6 +44,8 @@ function PaymentModal({
 }: PaymentModalProps) {
   const amountInputRef = useRef<HTMLInputElement>(null);
   const [isAmountFocused, setIsAmountFocused] = useState(false);
+  const [isFrequencyOptionsOpen, setIsFrequencyOptionsOpen] = useState(false);
+  const frequencyButtonRef = useRef<HTMLButtonElement>(null);
 
   const isEdit = mode === "edit";
 
@@ -162,30 +164,66 @@ function PaymentModal({
             />
           </div>
 
-          <div className="payment-modal__field">
-            <label htmlFor="payment-frequency">Frequência</label>
+          <div
+            className="payment-modal__field"
+            onKeyDown={(event) => {
+              if (event.key === "Escape" && isFrequencyOptionsOpen) {
+                setIsFrequencyOptionsOpen(false);
+                frequencyButtonRef.current?.focus();
+              }
+            }}
+          >
+            <span
+              id="payment-frequency-label"
+              className="payment-modal__field-label"
+            >
+              Frequência
+            </span>
 
-            <select
+            <button
+              ref={frequencyButtonRef}
               id="payment-frequency"
-              value={payment.frequency}
-              required
+              type="button"
+              className="payment-modal__frequency-trigger"
+              aria-labelledby="payment-frequency-label"
+              aria-expanded={isFrequencyOptionsOpen}
+              aria-controls="payment-frequency-options"
               disabled={isSaving || isEdit}
-              onChange={(event) => {
-                const frequency = event.target
-                  .value as PaymentFormData["frequency"];
+              onClick={() => setIsFrequencyOptionsOpen((isOpen) => !isOpen)}
+            >
+              <span>{PaymentFrequencyLabel[payment.frequency]}</span>
+              <span aria-hidden="true">
+                {isFrequencyOptionsOpen ? "▲" : "▼"}
+              </span>
+            </button>
 
-                onChange({
-                  ...payment,
-                  frequency,
-                });
-              }}
+            <div
+              id="payment-frequency-options"
+              className="payment-modal__frequency-options"
+              role="group"
+              aria-label="Opções de frequência"
+              hidden={!isFrequencyOptionsOpen}
             >
               {Object.values(PaymentFrequency).map((frequency) => (
-                <option key={frequency} value={frequency}>
+                <button
+                  key={frequency}
+                  type="button"
+                  className="payment-modal__frequency-option"
+                  aria-pressed={payment.frequency === frequency}
+                  disabled={isSaving || isEdit}
+                  onClick={() => {
+                    onChange({
+                      ...payment,
+                      frequency,
+                    });
+                    setIsFrequencyOptionsOpen(false);
+                    frequencyButtonRef.current?.focus();
+                  }}
+                >
                   {PaymentFrequencyLabel[frequency]}
-                </option>
+                </button>
               ))}
-            </select>
+            </div>
           </div>
 
           {isEdit && payment.frequency !== PaymentFrequency.ONCE && (
