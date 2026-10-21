@@ -7,6 +7,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -109,6 +110,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		Value:    token,
 		Path:     "/",
 		HttpOnly: true,
+		Secure:   os.Getenv("APP_ENV") == "production",
 		SameSite: http.SameSiteLaxMode,
 		Expires:  expiresAt,
 	})
@@ -154,6 +156,7 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 		Value:    "",
 		Path:     "/",
 		HttpOnly: true,
+		Secure:   os.Getenv("APP_ENV") == "production",
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   -1,
 	})

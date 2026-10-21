@@ -31,8 +31,13 @@ Essas credenciais são apenas para desenvolvimento local.
 
 ```sh
 cd backend
-DATABASE_URL='postgres://postgres:postgres@localhost:5432/casona54_app?sslmode=disable' go run .
+DATABASE_URL='postgres://postgres:postgres@localhost:5432/casona54_app?sslmode=disable' \
+  APP_ENV=development \
+  FRONTEND_ORIGIN='http://localhost:5173' \
+  go run .
 ```
+
+`PORT` é opcional localmente e assume `8080`; em hospedagem, o backend usa a porta informada pela plataforma. `FRONTEND_ORIGIN` define a única origem autorizada pelo CORS; localmente, o padrão é `http://localhost:5173`. Em produção, defina `APP_ENV=production` e informe `FRONTEND_ORIGIN`; o backend encerra a inicialização se essa origem estiver ausente. Nesse ambiente, o cookie de sessão recebe o atributo `Secure` e só é enviado pelo navegador em conexões HTTPS.
 
 Na primeira inicialização de um banco vazio, o backend cria `schema_migrations` e aplica os arquivos de `backend/migrations/` em ordem. Migrations aplicadas são registradas pelo nome do arquivo e não são executadas novamente. Se uma migration falhar, o backend informa o arquivo no log e não inicia o servidor.
 
@@ -141,4 +146,4 @@ Não registre uma migration como aplicada se o SQL dela ainda não foi aplicado 
 
 ## Hospedagem
 
-O CORS do backend está configurado para `http://localhost:5173`, e o cookie de sessão ainda não usa o atributo `Secure`. Antes de hospedar, será necessário configurar a origem real do frontend e cookies para HTTPS, além de usar credenciais e variáveis de ambiente próprias do ambiente publicado. A preparação da hospedagem está na etapa 17 do roteiro do projeto.
+Para produção, configure `DATABASE_URL`, `PORT` (quando exigido pela plataforma), `APP_ENV=production` e `FRONTEND_ORIGIN` com a origem exata do frontend, incluindo `https://` e sem caminho final. O CORS só permite essa origem e o cookie de sessão usa `Secure`. Ainda é necessário escolher os provedores, configurar as credenciais do banco e confirmar a comunicação entre frontend e API; isso faz parte da etapa 17 do roteiro do projeto.

@@ -13,6 +13,20 @@ import (
 )
 
 func main() {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	appEnv := os.Getenv("APP_ENV")
+	frontendOrigin := os.Getenv("FRONTEND_ORIGIN")
+	if frontendOrigin == "" {
+		if appEnv == "production" {
+			log.Fatal("FRONTEND_ORIGIN is required in production")
+		}
+		frontendOrigin = "http://localhost:5173"
+	}
+
 	if err := connectDatabase(); err != nil {
 		log.Fatalf("Database startup failed: %v", err)
 	}
@@ -32,8 +46,8 @@ func main() {
 	mux.HandleFunc("/me/password", authMiddleware(changePasswordHandler))
 
 	server := &http.Server{
-		Addr:              ":8080",
-		Handler:           corsMiddleware(mux),
+		Addr:              ":" + port,
+		Handler:           corsMiddleware(frontendOrigin, mux),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      30 * time.Second,
@@ -52,7 +66,7 @@ func main() {
 	serverErrors := make(chan error, 1)
 
 	go func() {
-		log.Println("Server is running on port 8080")
+		log.Printf("Server is running on port %s", port)
 		serverErrors <- server.ListenAndServe()
 	}()
 
