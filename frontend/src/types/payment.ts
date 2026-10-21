@@ -23,7 +23,7 @@ export type PaymentFormData = {
   status: PaymentStatus;
   paidAt: string;
   frequency: PaymentFrequency;
-  durationMonths: string;
+  durationCount: string;
 };
 
 export type PaymentPayload = {
@@ -35,5 +35,5 @@ export type PaymentPayload = {
   status: PaymentFormData["status"];
   paid_at: string;
   frequency: PaymentFrequency;
-  duration_months?: number;
+  duration_count?: number;
 };

@@ -8,15 +8,16 @@ import (
 )
 
 type paymentRecurrenceRule struct {
-	ID             int
-	Description    string
-	Amount         float64
-	Frequency      string
-	FirstDueDate   time.Time
-	NextOccurrence int
-	Category       string
-	Responsible    string
-	DurationMonths int
+	ID                   int
+	Description          string
+	Amount               float64
+	Frequency            string
+	FirstDueDate         time.Time
+	NextOccurrence       int
+	Category             string
+	Responsible          string
+	DurationCount        int
+	LegacyDurationMonths int
 }
 
 func generateUpcomingPayments(ctx context.Context) error {
@@ -38,6 +39,7 @@ func generateUpcomingPayments(ctx context.Context) error {
 				next_occurrence,
 				category,
 				responsible,
+				COALESCE(duration_count, 0),
 				COALESCE(duration_months, 0)
 			FROM payment_recurrence_rules
 			WHERE is_active = TRUE
@@ -63,7 +65,8 @@ func generateUpcomingPayments(ctx context.Context) error {
 			&rule.NextOccurrence,
 			&rule.Category,
 			&rule.Responsible,
-			&rule.DurationMonths,
+			&rule.DurationCount,
+			&rule.LegacyDurationMonths,
 		); err != nil {
 			rows.Close()
 			return fmt.Errorf("scan recurrence rule: %w", err)
@@ -97,8 +100,17 @@ func generateUpcomingPayments(ctx context.Context) error {
 	for i := range rules {
 		rule := &rules[i]
 		endDate := time.Time{}
-		if rule.DurationMonths > 0 {
-			endDate = addMonthsKeepingDay(rule.FirstDueDate, rule.DurationMonths)
+		if rule.DurationCount > 0 {
+			endDate, err = recurrenceEndDate(
+				rule.FirstDueDate,
+				rule.Frequency,
+				rule.DurationCount,
+			)
+			if err != nil {
+				return fmt.Errorf("calculate end date for recurrence rule %d: %w", rule.ID, err)
+			}
+		} else if rule.LegacyDurationMonths > 0 {
+			endDate = addMonthsKeepingDay(rule.FirstDueDate, rule.LegacyDurationMonths)
 		}
 		isComplete := false
 
@@ -192,6 +204,27 @@ func generateUpcomingPayments(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func recurrenceEndDate(firstDueDate time.Time, frequency string, durationCount int) (time.Time, error) {
+	start := time.Date(
+		firstDueDate.Year(),
+		firstDueDate.Month(),
+		firstDueDate.Day(),
+		0, 0, 0, 0,
+		time.UTC,
+	)
+
+	switch frequency {
+	case "weekly":
+		return start.AddDate(0, 0, 7*durationCount), nil
+	case "monthly":
+		return addMonthsKeepingDay(start, durationCount), nil
+	case "yearly":
+		return addMonthsKeepingDay(start, 12*durationCount), nil
+	default:
+		return time.Time{}, fmt.Errorf("invalid frequency: %s", frequency)
+	}
 }
 
 func recurrenceDate(firstDueDate time.Time, frequency string, occurrence int) (time.Time, error) {

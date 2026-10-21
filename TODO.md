@@ -148,15 +148,29 @@ Este arquivo é a fila oficial das próximas etapas. Vamos concluir cada etapa a
 
 **Por que entrou no final:** a modal atualmente pode mostrar `12,4` quando a pessoa espera ver `R$ 12,40`.
 
-### 15. Melhorar a exibição das opções de frequência no celular — adicionada ao final
+### 15. Melhorar a exibição das opções de frequência no celular — concluída
 
 - Aumentar a legibilidade e a área de toque das opções de frequência na modal.
 - Fazer com que a lista de opções apareça logo abaixo do campo de frequência em telas estreitas.
 - Conferir o comportamento do seletor nativo no celular; se ele não permitir controlar a posição ou o tamanho da lista, avaliar uma lista customizada acessível.
+- Implementado: a modal usa um menu próprio com opções acessíveis por teclado, foco restaurado após a escolha e áreas de toque maiores.
 
 **Por que entrou no final:** no celular, as opções atuais ficam pequenas e não aparecem logo abaixo do campo de frequência.
 
-### 16. Preparar e publicar a aplicação
+### 16. Usar a unidade da frequência na duração da recorrência — concluída
+
+- Exibir a quantidade na unidade correspondente à frequência: semanas para semanal, meses para mensal e anos para anual.
+- Gerar ocorrências dentro desse número de unidades, com o primeiro vencimento incluído e o limite final exclusivo.
+- Atualizar o contrato da API, o formulário e o banco sem mudar o comportamento das regras recorrentes já existentes, que atualmente guardam duração em meses.
+- Acrescentar e documentar uma migration para armazenar a nova quantidade sem reinterpretar as durações das regras antigas.
+- Implementado: a modal apresenta semanas, meses ou anos e limpa a quantidade quando a frequência é trocada.
+- Implementado: a API recebe `duration_count`; migration 008 adiciona a coluna e mantém `duration_months` para as regras antigas.
+- Implementado: o gerador calcula o limite exclusivo conforme a frequência e mantém a interpretação antiga das regras já existentes.
+- Documentação da API atualizada. `backend/README.md` descreve o novo campo e a compatibilidade das regras anteriores.
+
+**Por que entrou no final:** a usuária pediu que a duração corresponda à unidade da frequência, depois de notar que o campo continuava em meses para recorrências semanais e anuais.
+
+### 17. Preparar e publicar a aplicação
 
 - Escolher hospedagem para frontend, backend e PostgreSQL gerenciado.
 - Configurar variáveis de ambiente, HTTPS, origem permitida pelo CORS e cookie seguro.

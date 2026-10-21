@@ -14,17 +14,17 @@ import (
 )
 
 type Payment struct {
-	ID             int     `json:"id"`
-	Description    string  `json:"description"`
-	Amount         float64 `json:"amount"`
-	DueDate        string  `json:"due_date"`
-	Category       string  `json:"category"`
-	Responsible    string  `json:"responsible"`
-	Status         string  `json:"status"`
-	PaidAt         string  `json:"paid_at"`
-	Frequency      string  `json:"frequency"`
-	DurationMonths int     `json:"duration_months,omitempty"`
-	IsRecurring    bool    `json:"is_recurring"`
+	ID            int     `json:"id"`
+	Description   string  `json:"description"`
+	Amount        float64 `json:"amount"`
+	DueDate       string  `json:"due_date"`
+	Category      string  `json:"category"`
+	Responsible   string  `json:"responsible"`
+	Status        string  `json:"status"`
+	PaidAt        string  `json:"paid_at"`
+	Frequency     string  `json:"frequency"`
+	DurationCount int     `json:"duration_count,omitempty"`
+	IsRecurring   bool    `json:"is_recurring"`
 }
 
 func isValidPaymentFrequency(frequency string) bool {
@@ -182,8 +182,8 @@ func createPayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if payment.Frequency != "once" && payment.DurationMonths < 1 {
-		http.Error(w, "Duration must be at least 1 month", http.StatusBadRequest)
+	if payment.Frequency != "once" && payment.DurationCount < 1 {
+		http.Error(w, "Duration must be at least 1", http.StatusBadRequest)
 		return
 	}
 
@@ -210,7 +210,7 @@ func createPayment(w http.ResponseWriter, r *http.Request) {
 					first_due_date,
 					category,
 					responsible,
-					duration_months
+					duration_count
 				)
 				VALUES ($1, $2, $3, $4, $5, $6, $7)
 				RETURNING id
@@ -221,7 +221,7 @@ func createPayment(w http.ResponseWriter, r *http.Request) {
 			payment.DueDate,
 			payment.Category,
 			payment.Responsible,
-			payment.DurationMonths,
+			payment.DurationCount,
 		).Scan(&recurrenceRuleID)
 
 		if err != nil {

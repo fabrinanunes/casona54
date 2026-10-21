@@ -24,7 +24,7 @@ function toPaymentPayload(payment: PaymentFormData): PaymentPayload {
     paid_at: payment.paidAt,
     frequency: payment.frequency,
     ...(payment.frequency !== "once"
-      ? { duration_months: Number(payment.durationMonths) }
+      ? { duration_count: Number(payment.durationCount) }
       : {}),
   };
 }

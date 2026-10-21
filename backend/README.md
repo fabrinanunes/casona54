@@ -79,7 +79,7 @@ Os objetos de pagamento usam estes campos JSON:
 | `status` | string | `pending` ou `paid`. |
 | `paid_at` | string `YYYY-MM-DD` ou vazia | Data do pagamento; vazia quando pendente. |
 | `frequency` | string | `once`, `weekly`, `monthly` ou `yearly`. |
-| `duration_months` | integer | Enviado na criação; obrigatório para frequência recorrente. Inclui o mês do primeiro vencimento. |
+| `duration_count` | integer | Enviado na criação; obrigatório para frequência recorrente. A unidade depende da frequência: semanas, meses ou anos. Inclui o primeiro período. |
 | `is_recurring` | boolean | Campo devolvido pela listagem para identificar pagamentos ligados a uma regra recorrente. |
 
 Criação e edição validam os campos no backend. Pagamentos pendentes não podem ter `paid_at`; pagamentos pagos precisam ter uma data válida.
@@ -106,7 +106,7 @@ O login recebe `email` e `password`. Em caso de sucesso, a API define o cookie `
 
 ## Pagamentos recorrentes
 
-Frequências `weekly`, `monthly` e `yearly` criam uma regra de recorrência junto com o primeiro pagamento. A frequência `once` não cria uma regra. Novas recorrências exigem `duration_months` maior que zero. O primeiro vencimento conta como o início da duração, e a data final é exclusiva: uma recorrência mensal de 3 meses com início em 31 de janeiro inclui 31 de janeiro, fevereiro e março, mas não inclui abril. O backend gera as ocorrências dentro da duração e de uma janela móvel de 12 meses; recorrências mais longas são completadas pelo agendador diário. Regras antigas sem duração (`NULL`) mantêm o comportamento anterior sem data final.
+Frequências `weekly`, `monthly` e `yearly` criam uma regra de recorrência junto com o primeiro pagamento. A frequência `once` não cria uma regra. Novas recorrências exigem `duration_count` maior que zero; sua unidade segue a frequência (por exemplo, 3 semanas, 3 meses ou 3 anos). O primeiro vencimento conta como o início da duração, e a data final é exclusiva: uma recorrência mensal de 3 meses com início em 31 de janeiro inclui 31 de janeiro, fevereiro e março, mas não inclui abril. O backend gera as ocorrências dentro da duração e de uma janela móvel de 12 meses; recorrências mais longas são completadas pelo agendador diário. Regras criadas antes da migration 008 continuam usando `duration_months` e preservam o limite que já tinham.
 
 O gerador trata meses mais curtos, mantendo o dia dentro do limite do mês (por exemplo, vencimento no dia 31 passa para o último dia de fevereiro). Editar uma ocorrência altera somente aquele pagamento; não altera os dados da regra nem os demais pagamentos da série. Excluir uma ocorrência remove ela e todas as posteriores e desativa a regra de recorrência numa transação.
 
@@ -141,4 +141,4 @@ Não registre uma migration como aplicada se o SQL dela ainda não foi aplicado 
 
 ## Hospedagem
 
-O CORS do backend está configurado para `http://localhost:5173`, e o cookie de sessão ainda não usa o atributo `Secure`. Antes de hospedar, será necessário configurar a origem real do frontend e cookies para HTTPS, além de usar credenciais e variáveis de ambiente próprias do ambiente publicado. A preparação da hospedagem está na etapa 16 do roteiro do projeto.
+O CORS do backend está configurado para `http://localhost:5173`, e o cookie de sessão ainda não usa o atributo `Secure`. Antes de hospedar, será necessário configurar a origem real do frontend e cookies para HTTPS, além de usar credenciais e variáveis de ambiente próprias do ambiente publicado. A preparação da hospedagem está na etapa 17 do roteiro do projeto.

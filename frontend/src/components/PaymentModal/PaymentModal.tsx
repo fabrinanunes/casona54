@@ -49,6 +49,13 @@ function PaymentModal({
 
   const isEdit = mode === "edit";
 
+  const durationUnit = {
+    [PaymentFrequency.ONCE]: "vezes",
+    [PaymentFrequency.WEEKLY]: "semanas",
+    [PaymentFrequency.MONTHLY]: "meses",
+    [PaymentFrequency.YEARLY]: "anos",
+  }[payment.frequency];
+
   const parsedAmount = parseCurrencyInput(String(payment.amount));
 
   const handleAmountChange = (value: string) => {
@@ -215,6 +222,7 @@ function PaymentModal({
                     onChange({
                       ...payment,
                       frequency,
+                      durationCount: "",
                     });
                     setIsFrequencyOptionsOpen(false);
                     frequencyButtonRef.current?.focus();
@@ -235,26 +243,28 @@ function PaymentModal({
 
           {!isEdit && payment.frequency !== PaymentFrequency.ONCE && (
             <div className="payment-modal__field">
-              <label htmlFor="payment-duration">Duração (meses)</label>
+              <label htmlFor="payment-duration">
+                Duração ({durationUnit})
+              </label>
 
               <input
                 id="payment-duration"
                 type="number"
                 min="1"
                 step="1"
-                value={payment.durationMonths}
+                value={payment.durationCount}
                 required
                 disabled={isSaving}
                 onChange={(event) =>
                   onChange({
                     ...payment,
-                    durationMonths: event.target.value,
+                    durationCount: event.target.value,
                   })
                 }
               />
 
               <small>
-                O vencimento inicial conta como o primeiro mês da duração.
+                O vencimento inicial conta como o primeiro período da duração.
               </small>
             </div>
           )}
