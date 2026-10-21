@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: casona54-api
+    runtime: go
+    plan: free
+    rootDir: backend
+    buildCommand: go build -tags netgo -ldflags '-s -w' -o app .
+    startCommand: ./app
+    healthCheckPath: /health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: FRONTEND_ORIGIN
+        sync: false
+      - key: DATABASE_URL
+        sync: false

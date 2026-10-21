@@ -146,4 +146,4 @@ Não registre uma migration como aplicada se o SQL dela ainda não foi aplicado 
 
 ## Hospedagem
 
-Para produção, configure `DATABASE_URL`, `PORT` (quando exigido pela plataforma), `APP_ENV=production` e `FRONTEND_ORIGIN` com a origem exata do frontend, incluindo `https://` e sem caminho final. O CORS só permite essa origem e o cookie de sessão usa `Secure`. Ainda é necessário escolher os provedores, configurar as credenciais do banco e confirmar a comunicação entre frontend e API; isso faz parte da etapa 17 do roteiro do projeto.
+Para produção, configure `DATABASE_URL`, `PORT` (quando exigido pela plataforma), `APP_ENV=production` e `FRONTEND_ORIGIN` com a origem exata do frontend, incluindo `https://` e sem caminho final. O CORS só permite essa origem e o cookie de sessão usa `Secure`. O frontend hospedado no Cloudflare Pages chama `/api`; uma Pages Function encaminha essas chamadas ao backend para manter a sessão no mesmo site. Consulte [`../DEPLOYMENT.md`](../DEPLOYMENT.md) para o roteiro completo.

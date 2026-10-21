@@ -56,6 +56,10 @@ O frontend usa `http://localhost:8080` como API e fica disponível no endereço 
 
 Para rotas, campos da API, autenticação, recorrências e detalhes das migrations, consulte [`backend/README.md`](backend/README.md).
 
+## Hospedagem gratuita
+
+O projeto está preparado para Cloudflare Pages (frontend), Render Free (API Go) e Neon Free (PostgreSQL). Consulte [`DEPLOYMENT.md`](DEPLOYMENT.md) para configurar os serviços, variáveis e usuário inicial. Os planos gratuitos têm limites de disponibilidade e uso.
+
 ## Histórico Git
 
 Os históricos dos repositórios anteriores estão preservados nas branches locais

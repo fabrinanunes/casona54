@@ -172,7 +172,8 @@ Este arquivo é a fila oficial das próximas etapas. Vamos concluir cada etapa a
 
 ### 17. Preparar e publicar a aplicação
 
-- Escolher hospedagem para frontend, backend e PostgreSQL gerenciado.
+- Provedores gratuitos escolhidos: Cloudflare Pages para o frontend e proxy, Render Free para a API Go e Neon Free para PostgreSQL.
+- Preparação no repositório concluída: `render.yaml` configura a API; uma Pages Function encaminha `/api` à API para manter o cookie na origem do frontend; `DEPLOYMENT.md` documenta a configuração.
 - Configurar variáveis de ambiente, HTTPS, origem permitida pelo CORS e cookie seguro.
 - Aplicar as migrações no banco hospedado e criar o usuário admin.
 - Configurar backups do banco e verificar restauração.
@@ -182,5 +183,4 @@ Este arquivo é a fila oficial das próximas etapas. Vamos concluir cada etapa a
 
 ## Melhorias encontradas na revisão
 
-- A configuração atual de CORS aponta para `localhost`; ela precisará ser configurável para a hospedagem.
-- O cookie de sessão ainda não configura `Secure`, necessário quando servido por HTTPS.
+- CORS agora usa `FRONTEND_ORIGIN`, e o cookie recebe `Secure` quando `APP_ENV=production`; os valores finais ainda precisam ser definidos nos provedores.
