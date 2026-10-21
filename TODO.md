@@ -138,11 +138,13 @@ Este arquivo é a fila oficial das próximas etapas. Vamos concluir cada etapa a
 
 **Por que entrou no final:** limita os responsáveis aos dois usuários que utilizarão o aplicativo.
 
-### 14. Formatar o valor como moeda brasileira durante a digitação — adicionada ao final
+### 14. Formatar o valor como moeda brasileira durante a digitação — concluída
 
 - Na modal, formatar o valor como moeda brasileira enquanto a pessoa digita, sem esperar que o campo perca o foco; exibir símbolo, separadores e duas casas decimais (por exemplo, `R$ 12,40`).
 - Manter a conversão para o valor numérico em reais usado pela API e pelo backend (`R$ 12,40` representa `12.4`), sem enviar centavos (`1240`) nem a string formatada.
 - Conferir a edição de pagamentos existentes, a digitação no celular e valores com centavos terminados em zero.
+- Implementado: o campo mostra `R$`, separa milhares e mantém os centavos sendo digitado; a normalização converte vírgula ou ponto decimal para o formato que `parseCurrencyInput` já aceita.
+- A camada de serviço continua enviando o valor numérico em reais, sem enviar o texto formatado nem converter para centavos.
 
 **Por que entrou no final:** a modal atualmente pode mostrar `12,4` quando a pessoa espera ver `R$ 12,40`.
 

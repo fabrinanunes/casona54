@@ -40,6 +40,60 @@ export function formatCurrency(
   );
 }
 
+export function normalizeCurrencyInput(value: string): string {
+  const cleaned = value.replace(/[^\d,.]/g, "");
+
+  if (!cleaned) return "";
+
+  const commaIndex = cleaned.lastIndexOf(",");
+
+  if (commaIndex >= 0) {
+    const integerPart = cleaned
+      .slice(0, commaIndex)
+      .replace(/[^\d]/g, "");
+    const decimalPart = cleaned
+      .slice(commaIndex + 1)
+      .replace(/[^\d]/g, "")
+      .slice(0, 2);
+
+    return `${integerPart || "0"},${decimalPart}`;
+  }
+
+  const dotIndex = cleaned.lastIndexOf(".");
+
+  if (dotIndex >= 0) {
+    const digitsAfterDot = cleaned.length - dotIndex - 1;
+
+    if (digitsAfterDot >= 3) {
+      return cleaned.replace(/[^\d]/g, "");
+    }
+
+    const integerPart = cleaned
+      .slice(0, dotIndex)
+      .replace(/[^\d]/g, "");
+    const decimalPart = cleaned
+      .slice(dotIndex + 1)
+      .replace(/[^\d]/g, "")
+      .slice(0, 2);
+
+    return `${integerPart || "0"},${decimalPart}`;
+  }
+
+  return cleaned.replace(/[^\d]/g, "");
+}
+
+export function formatCurrencyInput(value: string): string {
+  if (!value) return "";
+
+  const [integerPart, decimalPart] = value.split(",");
+  const integerValue = Number(integerPart || "0");
+  const formattedInteger = integerValue.toLocaleString("pt-BR");
+
+  return `R$ ${formattedInteger}${
+    decimalPart === undefined ? "" : `,${decimalPart}`
+  }`;
+}
+
 export function getTodayForDateInput(): string {
   const today = new Date();
   const year = today.getFullYear();

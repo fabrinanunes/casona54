@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { PaymentResponsible } from "../../constants/responsibleConstants";
 
@@ -11,10 +11,11 @@ import type { PaymentFormData } from "../../types/payment";
 
 import {
   formatCurrency,
+  formatCurrencyInput,
   getTodayForDateInput,
+  normalizeCurrencyInput,
   parseCurrencyInput,
 } from "../../utils/formatUtils";
-
 import {
   PaymentFrequency,
   PaymentFrequencyLabel,
@@ -41,6 +42,7 @@ function PaymentModal({
   isSaving,
   error,
 }: PaymentModalProps) {
+  const amountInputRef = useRef<HTMLInputElement>(null);
   const [isAmountFocused, setIsAmountFocused] = useState(false);
 
   const isEdit = mode === "edit";
@@ -50,7 +52,15 @@ function PaymentModal({
   const handleAmountChange = (value: string) => {
     onChange({
       ...payment,
-      amount: value.replace(/[^\d,]/g, ""),
+      amount: normalizeCurrencyInput(value),
+    });
+
+    requestAnimationFrame(() => {
+      const input = amountInputRef.current;
+
+      if (input) {
+        input.setSelectionRange(input.value.length, input.value.length);
+      }
     });
   };
 
@@ -118,14 +128,13 @@ function PaymentModal({
               id="payment-amount"
               type="text"
               inputMode="decimal"
+              ref={amountInputRef}
               value={
-                payment.amount === ""
-                  ? ""
-                  : isAmountFocused
-                    ? String(payment.amount)
-                    : parsedAmount === null
-                      ? String(payment.amount)
-                      : formatCurrency(parsedAmount)
+                isAmountFocused
+                  ? formatCurrencyInput(String(payment.amount))
+                  : parsedAmount === null
+                    ? formatCurrencyInput(String(payment.amount))
+                    : formatCurrency(parsedAmount)
               }
               required
               disabled={isSaving}
