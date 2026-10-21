@@ -1,7 +1,8 @@
 import { useState } from "react";
-import "./Login.css";
-import { login } from "../../services/authService";
 import { ApiError } from "../../services/api";
+import { login } from "../../services/authService";
+
+import "./Login.css";
 
 type LoginProps = {
   onLogin: () => void;

@@ -3,6 +3,7 @@ import {
 } from "../constants/paymentConstants";
 
 import type { Payment } from "../types/payment";
+import { getTodayForDateInput } from "./formatUtils";
 
 function toCents(amount: number): number {
   return Math.round(amount * 100);
@@ -22,26 +23,7 @@ export function isPaymentOverdue(
     return false;
   }
 
-  const today = new Date();
-
-  const year =
-    today.getFullYear();
-
-  const month = String(
-    today.getMonth() + 1,
-  ).padStart(2, "0");
-
-  const day = String(
-    today.getDate(),
-  ).padStart(2, "0");
-
-  const todayAsString =
-    `${year}-${month}-${day}`;
-
-  return (
-    payment.due_date <
-    todayAsString
-  );
+  return payment.due_date < getTodayForDateInput();
 }
 
 export function calculateTotalAmount(

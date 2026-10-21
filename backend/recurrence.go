@@ -233,25 +233,25 @@ func addMonthsKeepingDay(start time.Time, months int) time.Time {
 }
 
 func startRecurringPaymentScheduler(ctx context.Context) {
-    go func() {
-        run := func() {
-            if err := generateUpcomingPayments(ctx); err != nil && ctx.Err() == nil {
-                log.Printf("failed to generate recurring payments: %v", err)
-            }
-        }
+	go func() {
+		run := func() {
+			if err := generateUpcomingPayments(ctx); err != nil && ctx.Err() == nil {
+				log.Printf("failed to generate recurring payments: %v", err)
+			}
+		}
 
-        run()
+		run()
 
-        ticker := time.NewTicker(24 * time.Hour)
-        defer ticker.Stop()
+		ticker := time.NewTicker(24 * time.Hour)
+		defer ticker.Stop()
 
-        for {
-            select {
-            case <-ctx.Done():
-                return
-            case <-ticker.C:
-                run()
-            }
-        }
-    }()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				run()
+			}
+		}
+	}()
 }

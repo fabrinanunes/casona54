@@ -99,15 +99,18 @@ Este arquivo é a fila oficial das próximas etapas. Vamos concluir cada etapa a
 
 **Por que veio antes de publicar:** a documentação deve descrever o comportamento atual e permitir reconstruir o ambiente.
 
-### 11. Preparar e publicar a aplicação
+### 11. Revisar a qualidade do código e as instruções do projeto sem alterar comportamento — concluída
 
-- Escolher hospedagem para frontend, backend e PostgreSQL gerenciado.
-- Configurar variáveis de ambiente, HTTPS, origem permitida pelo CORS e cookie seguro.
-- Aplicar as migrações no banco hospedado e criar o usuário admin.
-- Configurar backups do banco e verificar restauração.
-- Publicar e conferir login, pagamentos e recorrências nos dois celulares.
+- Aplicar `gofmt` aos arquivos Go e uniformizar a formatação, a ordem dos imports e a legibilidade de trechos TS/TSX.
+- Remover verificações de frequência duplicadas nos handlers de criação e edição: `validatePayment` já faz essa validação antes.
+- Reutilizar `getTodayForDateInput` no cálculo de atraso, mantendo a mesma data local usada pela aplicação.
+- Tornar `apiUrl` privada ao módulo, pois nenhum outro arquivo importa esse valor.
+- Atualizar `AGENTS.md` e `CLAUDE.md`, que ainda descreviam migrations manuais, rotas antigas e um roteiro defasado.
+- Conferir ESLint do frontend e `go vet` do backend; ambos passaram.
+- Conferir também os builds do frontend e backend; ambos passaram.
+- Nenhuma alteração desta etapa muda o comportamento da aplicação.
 
-**Por que fica por último:** publicação depende de as funcionalidades, segurança, experiência móvel e migrações estarem concluídas.
+**Por que veio antes das próximas funcionalidades:** uma base consistente facilita revisar e manter as mudanças seguintes.
 
 ### 12. Configurar duração e encerramento de pagamentos recorrentes — adicionada ao final
 
@@ -143,6 +146,16 @@ Este arquivo é a fila oficial das próximas etapas. Vamos concluir cada etapa a
 - Conferir o comportamento do seletor nativo no celular; se ele não permitir controlar a posição ou o tamanho da lista, avaliar uma lista customizada acessível.
 
 **Por que entrou no final:** no celular, as opções atuais ficam pequenas e não aparecem logo abaixo do campo de frequência.
+
+### 16. Preparar e publicar a aplicação
+
+- Escolher hospedagem para frontend, backend e PostgreSQL gerenciado.
+- Configurar variáveis de ambiente, HTTPS, origem permitida pelo CORS e cookie seguro.
+- Aplicar as migrações no banco hospedado e criar o usuário admin.
+- Configurar backups do banco e verificar restauração.
+- Publicar e conferir login, pagamentos e recorrências nos dois celulares.
+
+**Por que fica por último:** a publicação depende da conclusão das funcionalidades, segurança, experiência móvel e migrações.
 
 ## Melhorias encontradas na revisão
 

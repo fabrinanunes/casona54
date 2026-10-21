@@ -1,16 +1,14 @@
 import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
 
+import { PaymentFrequencyLabel } from "../../constants/frequencyConstants";
 import {
   PaymentStatus,
   PaymentStatusLabel,
 } from "../../constants/paymentConstants";
-
 import { usePayments } from "../../hooks/usePayments";
 import { usePaymentForm } from "../../hooks/usePaymentForm";
-import PaymentModal from "../PaymentModal/PaymentModal";
-import { PaymentFrequencyLabel } from "../../constants/frequencyConstants";
-
+import { getUserFacingError } from "../../services/api";
 import {
   formatCurrency,
   formatDate,
@@ -33,8 +31,8 @@ import {
   type PaymentSort,
 } from "../../utils/paymentFilterUtils";
 
+import PaymentModal from "../PaymentModal/PaymentModal";
 import "./Dashboard.css";
-import { getUserFacingError } from "../../services/api";
 
 type DashboardProps = {
   onLogout: () => Promise<void>;

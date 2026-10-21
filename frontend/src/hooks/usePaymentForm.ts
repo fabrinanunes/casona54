@@ -1,24 +1,10 @@
-import {
-  useCallback,
-  useState,
-} from "react";
+import { useCallback, useState } from "react";
 
-import {
-  PaymentStatus,
-} from "../constants/paymentConstants";
+import { PaymentFrequency } from "../constants/frequencyConstants";
+import { PaymentStatus } from "../constants/paymentConstants";
+import type { Payment, PaymentFormData } from "../types/payment";
 
-import type {
-  Payment,
-  PaymentFormData,
-} from "../types/payment";
-
-import {
-  PaymentFrequency,
-} from "../constants/frequencyConstants";
-
-type PaymentModalMode =
-  | "create"
-  | "edit";
+type PaymentModalMode = "create" | "edit";
 
 type UsePaymentFormResult = {
   isOpen: boolean;
@@ -28,15 +14,11 @@ type UsePaymentFormResult = {
   openCreate: () => void;
   openEdit: (payment: Payment) => void;
   close: () => void;
-  updateField: <
-    K extends keyof PaymentFormData,
-  >(
+  updateField: <K extends keyof PaymentFormData>(
     field: K,
     value: PaymentFormData[K],
   ) => void;
-  setPayment: (
-    payment: PaymentFormData,
-  ) => void;
+  setPayment: (payment: PaymentFormData) => void;
 };
 
 const initialPayment: PaymentFormData = {
@@ -50,9 +32,7 @@ const initialPayment: PaymentFormData = {
   frequency: PaymentFrequency.ONCE,
 };
 
-function paymentToFormData(
-  payment: Payment,
-): PaymentFormData {
+function paymentToFormData(payment: Payment): PaymentFormData {
   return {
     description: payment.description,
     amount: payment.amount.toFixed(2).replace(".", ","),
@@ -66,45 +46,24 @@ function paymentToFormData(
 }
 
 export function usePaymentForm(): UsePaymentFormResult {
-  const [isOpen, setIsOpen] =
-    useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [mode, setMode] = useState<PaymentModalMode>("create");
+  const [payment, setPayment] = useState<PaymentFormData>(initialPayment);
+  const [editingPaymentId, setEditingPaymentId] = useState<number | null>(null);
 
-  const [mode, setMode] =
-    useState<PaymentModalMode>(
-      "create",
-    );
+  const openCreate = useCallback(() => {
+    setMode("create");
+    setPayment(initialPayment);
+    setEditingPaymentId(null);
+    setIsOpen(true);
+  }, []);
 
-  const [payment, setPayment] =
-    useState<PaymentFormData>(
-      initialPayment,
-    );
-
-  const [
-    editingPaymentId,
-    setEditingPaymentId,
-  ] = useState<number | null>(null);
-
-  const openCreate = useCallback(
-    () => {
-      setMode("create");
-      setPayment(initialPayment);
-      setEditingPaymentId(null);
-      setIsOpen(true);
-    },
-    [],
-  );
-
-  const openEdit = useCallback(
-    (payment: Payment) => {
-      setMode("edit");
-      setPayment(
-        paymentToFormData(payment),
-      );
-      setEditingPaymentId(payment.id);
-      setIsOpen(true);
-    },
-    [],
-  );
+  const openEdit = useCallback((payment: Payment) => {
+    setMode("edit");
+    setPayment(paymentToFormData(payment));
+    setEditingPaymentId(payment.id);
+    setIsOpen(true);
+  }, []);
 
   const close = useCallback(() => {
     setIsOpen(false);
@@ -112,18 +71,14 @@ export function usePaymentForm(): UsePaymentFormResult {
   }, []);
 
   const updateField = useCallback(
-    <
-      K extends keyof PaymentFormData,
-    >(
+    <K extends keyof PaymentFormData>(
       field: K,
       value: PaymentFormData[K],
     ) => {
-      setPayment(
-        (currentPayment) => ({
-          ...currentPayment,
-          [field]: value,
-        }),
-      );
+      setPayment((currentPayment) => ({
+        ...currentPayment,
+        [field]: value,
+      }));
     },
     [],
   );

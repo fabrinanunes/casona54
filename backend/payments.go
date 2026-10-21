@@ -165,11 +165,6 @@ func createPayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !isValidPaymentFrequency(payment.Frequency) {
-		http.Error(w, "Invalid payment frequency", http.StatusBadRequest)
-		return
-	}
-
 	ctx := r.Context()
 
 	tx, err := db.Begin(ctx)
@@ -352,7 +347,7 @@ func paymentByIDHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet:
-	getPaymentByID(w, r, id)
+		getPaymentByID(w, r, id)
 	case http.MethodPut:
 		updatePayment(w, r, id)
 	case http.MethodDelete:
@@ -366,7 +361,7 @@ func getPaymentByID(w http.ResponseWriter, r *http.Request, id int) {
 	var payment Payment
 
 	err := db.QueryRow(
-			r.Context(),
+		r.Context(),
 		`
 			SELECT
 				id,
@@ -423,13 +418,8 @@ func updatePayment(w http.ResponseWriter, r *http.Request, id int) {
 		return
 	}
 
-	if !isValidPaymentFrequency(updatedPayment.Frequency) {
-		http.Error(w, "Invalid payment frequency", http.StatusBadRequest)
-		return
-	}
-
 	err = db.QueryRow(
-			r.Context(),
+		r.Context(),
 		`
 			UPDATE payments
 			SET

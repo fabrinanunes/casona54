@@ -1,6 +1,6 @@
 import { validationMessages } from "../constants/errorMessages";
 
-export const apiUrl = import.meta.env.VITE_API_URL;
+const apiUrl = import.meta.env.VITE_API_URL;
 
 type ApiRequestOptions = Omit<
   RequestInit,

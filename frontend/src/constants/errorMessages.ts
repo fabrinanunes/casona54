@@ -8,11 +8,10 @@ export const validationMessages: Record<string, string> = {
   "Invalid request body": "Os dados enviados estão inválidos.",
   "Payment not found": "Esse pagamento não foi encontrado.",
   "Due date must be a valid date in YYYY-MM-DD format":
-  "Informe uma data de vencimento válida.",
-"Paid date must be empty for pending payments":
-  "Remova a data de pagamento enquanto o status estiver pendente.",
-"Paid date is required and must use YYYY-MM-DD format":
-  "Informe uma data de pagamento válida para um pagamento pago.",
-"Invalid payment ID":
-  "O identificador do pagamento é inválido.",
+    "Informe uma data de vencimento válida.",
+  "Paid date must be empty for pending payments":
+    "Remova a data de pagamento enquanto o status estiver pendente.",
+  "Paid date is required and must use YYYY-MM-DD format":
+    "Informe uma data de pagamento válida para um pagamento pago.",
+  "Invalid payment ID": "O identificador do pagamento é inválido.",
 };

@@ -1,18 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 
+import { getUserFacingError } from "../services/api";
 import {
   createPayment,
   deletePayment,
   getPayments,
-  updatePayment,
   markPaymentAsPaid,
+  updatePayment,
 } from "../services/paymentsService";
-
-import type {
-  Payment,
-  PaymentFormData,
-} from "../types/payment";
-import { getUserFacingError } from "../services/api";
+import type { Payment, PaymentFormData } from "../types/payment";
 
 type UsePaymentsResult = {
   payments: Payment[];
@@ -29,7 +25,8 @@ type UsePaymentsResult = {
 export function usePayments(): UsePaymentsResult {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const refresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -112,12 +109,12 @@ export function usePayments(): UsePaymentsResult {
   );
 
   const markAsPaid = useCallback(
-  async (id: number) => {
-    await markPaymentAsPaid(id);
-    await refresh();
-  },
-  [refresh],
-);
+    async (id: number) => {
+      await markPaymentAsPaid(id);
+      await refresh();
+    },
+    [refresh],
+  );
 
   return {
     payments,
