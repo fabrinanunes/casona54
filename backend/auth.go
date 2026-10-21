@@ -243,6 +243,11 @@ func changePasswordHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if request.NewPassword == "" {
+		http.Error(w, "New password is required", http.StatusBadRequest)
+		return
+	}
+
 	err = bcrypt.CompareHashAndPassword(
 		[]byte(passwordHash),
 		[]byte(request.CurrentPassword),
