@@ -135,10 +135,15 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     }
   };
 
-  const handleDeletePayment = async (id: number, description: string) => {
-    const confirmed = window.confirm(
-      `Deseja excluir o pagamento "${description}"? Essa ação não pode ser desfeita.`,
-    );
+  const handleDeletePayment = async (
+    id: number,
+    description: string,
+    isRecurring: boolean,
+  ) => {
+    const confirmationMessage = isRecurring
+      ? `Deseja excluir o pagamento "${description}" e todos os pagamentos seguintes desta recorrência? Os pagamentos anteriores serão mantidos. Essa ação não pode ser desfeita.`
+      : `Deseja excluir o pagamento "${description}"? Essa ação não pode ser desfeita.`;
+    const confirmed = window.confirm(confirmationMessage);
 
     if (!confirmed) return;
 
@@ -505,6 +510,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                           void handleDeletePayment(
                             payment.id,
                             payment.description,
+                            payment.is_recurring,
                           )
                         }
                       >

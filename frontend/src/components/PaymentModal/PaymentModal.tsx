@@ -160,12 +160,15 @@ function PaymentModal({
               value={payment.frequency}
               required
               disabled={isSaving || isEdit}
-              onChange={(event) =>
+              onChange={(event) => {
+                const frequency = event.target
+                  .value as PaymentFormData["frequency"];
+
                 onChange({
                   ...payment,
-                  frequency: event.target.value as PaymentFormData["frequency"],
-                })
-              }
+                  frequency,
+                });
+              }}
             >
               {Object.values(PaymentFrequency).map((frequency) => (
                 <option key={frequency} value={frequency}>
@@ -174,6 +177,39 @@ function PaymentModal({
               ))}
             </select>
           </div>
+
+          {isEdit && payment.frequency !== PaymentFrequency.ONCE && (
+            <p className="payment-modal__hint">
+              A edição altera somente este pagamento. A frequência e a duração
+              da recorrência continuam iguais.
+            </p>
+          )}
+
+          {!isEdit && payment.frequency !== PaymentFrequency.ONCE && (
+            <div className="payment-modal__field">
+              <label htmlFor="payment-duration">Duração (meses)</label>
+
+              <input
+                id="payment-duration"
+                type="number"
+                min="1"
+                step="1"
+                value={payment.durationMonths}
+                required
+                disabled={isSaving}
+                onChange={(event) =>
+                  onChange({
+                    ...payment,
+                    durationMonths: event.target.value,
+                  })
+                }
+              />
+
+              <small>
+                O vencimento inicial conta como o primeiro mês da duração.
+              </small>
+            </div>
+          )}
 
           <div className="payment-modal__field">
             <label htmlFor="payment-category">Categoria</label>

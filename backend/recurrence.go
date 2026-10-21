@@ -16,6 +16,7 @@ type paymentRecurrenceRule struct {
 	NextOccurrence int
 	Category       string
 	Responsible    string
+	DurationMonths int
 }
 
 func generateUpcomingPayments(ctx context.Context) error {
@@ -36,7 +37,8 @@ func generateUpcomingPayments(ctx context.Context) error {
 				first_due_date,
 				next_occurrence,
 				category,
-				responsible
+				responsible,
+				COALESCE(duration_months, 0)
 			FROM payment_recurrence_rules
 			WHERE is_active = TRUE
 			ORDER BY id
@@ -61,6 +63,7 @@ func generateUpcomingPayments(ctx context.Context) error {
 			&rule.NextOccurrence,
 			&rule.Category,
 			&rule.Responsible,
+			&rule.DurationMonths,
 		); err != nil {
 			rows.Close()
 			return fmt.Errorf("scan recurrence rule: %w", err)
@@ -93,6 +96,11 @@ func generateUpcomingPayments(ctx context.Context) error {
 
 	for i := range rules {
 		rule := &rules[i]
+		endDate := time.Time{}
+		if rule.DurationMonths > 0 {
+			endDate = addMonthsKeepingDay(rule.FirstDueDate, rule.DurationMonths)
+		}
+		isComplete := false
 
 		for {
 			dueDate, err := recurrenceDate(
@@ -106,6 +114,13 @@ func generateUpcomingPayments(ctx context.Context) error {
 					rule.ID,
 					err,
 				)
+			}
+
+			// The first due date is occurrence zero and is already inserted by
+			// createPayment. The end date is exclusive for later occurrences.
+			if !endDate.IsZero() && !dueDate.Before(endDate) {
+				isComplete = true
+				break
 			}
 
 			if dueDate.After(horizon) {
@@ -153,11 +168,14 @@ func generateUpcomingPayments(ctx context.Context) error {
 		_, err = tx.Exec(
 			ctx,
 			`
-				UPDATE payment_recurrence_rules
-				SET next_occurrence = $1
-				WHERE id = $2
+			UPDATE payment_recurrence_rules
+			SET
+				next_occurrence = $1,
+				is_active = CASE WHEN $2 THEN FALSE ELSE is_active END
+			WHERE id = $3
 			`,
 			rule.NextOccurrence,
+			isComplete,
 			rule.ID,
 		)
 		if err != nil {

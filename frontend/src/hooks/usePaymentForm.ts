@@ -30,6 +30,7 @@ const initialPayment: PaymentFormData = {
   status: PaymentStatus.PENDING,
   paidAt: "",
   frequency: PaymentFrequency.ONCE,
+  durationMonths: "12",
 };
 
 function paymentToFormData(payment: Payment): PaymentFormData {
@@ -42,6 +43,7 @@ function paymentToFormData(payment: Payment): PaymentFormData {
     status: payment.status,
     paidAt: payment.paid_at,
     frequency: payment.frequency,
+    durationMonths: "12",
   };
 }
 

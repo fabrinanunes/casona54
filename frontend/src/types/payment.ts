@@ -11,6 +11,7 @@ export type Payment = {
   status: PaymentStatus;
   paid_at: string;
   frequency: PaymentFrequency;
+  is_recurring: boolean;
 };
 
 export type PaymentFormData = {
@@ -22,6 +23,7 @@ export type PaymentFormData = {
   status: PaymentStatus;
   paidAt: string;
   frequency: PaymentFrequency;
+  durationMonths: string;
 };
 
 export type PaymentPayload = {
@@ -33,4 +35,5 @@ export type PaymentPayload = {
   status: PaymentFormData["status"];
   paid_at: string;
   frequency: PaymentFrequency;
+  duration_months?: number;
 };

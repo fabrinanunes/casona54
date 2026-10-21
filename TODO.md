@@ -112,7 +112,7 @@ Este arquivo é a fila oficial das próximas etapas. Vamos concluir cada etapa a
 
 **Por que veio antes das próximas funcionalidades:** uma base consistente facilita revisar e manter as mudanças seguintes.
 
-### 12. Configurar duração e encerramento de pagamentos recorrentes — adicionada ao final
+### 12. Configurar duração e encerramento de pagamentos recorrentes — concluída
 
 - Permitir escolher no frontend a duração da recorrência em meses para frequências semanais, mensais e anuais (por exemplo: 3, 5, 6 ou 30 meses).
 - Persistir a duração ou a data final na regra de recorrência e fazer o gerador respeitar esse limite, inclusive nas execuções diárias.
@@ -120,8 +120,13 @@ Este arquivo é a fila oficial das próximas etapas. Vamos concluir cada etapa a
 - Definir e implementar como editar uma ocorrência, alterar os dados/frequência da regra ou encerrar uma série sem deixar a regra e os pagamentos futuros inconsistentes.
 - Ao excluir uma ocorrência recorrente, remover do banco essa ocorrência e todas as posteriores, preservar as anteriores e desativar a regra para que o agendador não recrie os pagamentos excluídos.
 - Pedir confirmação no frontend antes de excluir a ocorrência e os pagamentos seguintes.
+- Implementado: migration 007 adiciona a duração em meses; o formulário envia essa duração para qualquer frequência recorrente e o backend rejeita valores menores que 1.
+- Implementado: o gerador usa o primeiro vencimento como início e uma data final exclusiva; regras com duração concluída são desativadas, inclusive quando o gerador diário alcança o limite.
+- Implementado: editar uma ocorrência altera somente aquele pagamento; frequência e duração da regra permanecem iguais.
+- Implementado: excluir uma ocorrência recorrente remove ela e as posteriores e desativa a regra na mesma transação; a confirmação informa que os pagamentos anteriores serão mantidos.
+- Verificações estáticas: ESLint, build do frontend, `go vet ./...` e `go build ./...` passaram.
 
-**Por que entrou no final:** é uma nova configuração de recorrência solicitada depois do roteiro inicial e depende da geração recorrente da etapa 2.
+**Por que veio nesta ordem:** é uma nova configuração de recorrência solicitada depois do roteiro inicial e depende da geração recorrente da etapa 2.
 
 ### 13. Restringir as opções de responsável — adicionada ao final
 

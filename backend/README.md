@@ -79,6 +79,8 @@ Os objetos de pagamento usam estes campos JSON:
 | `status` | string | `pending` ou `paid`. |
 | `paid_at` | string `YYYY-MM-DD` ou vazia | Data do pagamento; vazia quando pendente. |
 | `frequency` | string | `once`, `weekly`, `monthly` ou `yearly`. |
+| `duration_months` | integer | Enviado na criação; obrigatório para frequência recorrente. Inclui o mês do primeiro vencimento. |
+| `is_recurring` | boolean | Campo devolvido pela listagem para identificar pagamentos ligados a uma regra recorrente. |
 
 Criação e edição validam os campos no backend. Pagamentos pendentes não podem ter `paid_at`; pagamentos pagos precisam ter uma data válida.
 
@@ -99,14 +101,14 @@ O login recebe `email` e `password`. Em caso de sucesso, a API define o cookie `
 | `POST` | `/payments` | Sim | Criar pagamento. |
 | `GET` | `/payments/{id}` | Sim | Consultar um pagamento. |
 | `PUT` | `/payments/{id}` | Sim | Editar um pagamento. |
-| `DELETE` | `/payments/{id}` | Sim | Excluir um pagamento. |
+| `DELETE` | `/payments/{id}` | Sim | Excluir um pagamento avulso; em uma recorrência, excluir o selecionado e os posteriores, mantendo os anteriores. |
 | `PATCH` | `/payments/{id}/pay` | Sim | Marcar como pago; usa a data atual de São Paulo se ainda não houver data de pagamento. |
 
 ## Pagamentos recorrentes
 
-Frequências `weekly`, `monthly` e `yearly` criam uma regra de recorrência junto com o primeiro pagamento. A frequência `once` não cria uma regra. Ao criar uma recorrência, a API gera as próximas ocorrências dentro de uma janela móvel de 12 meses. O backend tenta preencher essa janela ao iniciar e depois a atualiza uma vez por dia enquanto estiver em execução.
+Frequências `weekly`, `monthly` e `yearly` criam uma regra de recorrência junto com o primeiro pagamento. A frequência `once` não cria uma regra. Novas recorrências exigem `duration_months` maior que zero. O primeiro vencimento conta como o início da duração, e a data final é exclusiva: uma recorrência mensal de 3 meses com início em 31 de janeiro inclui 31 de janeiro, fevereiro e março, mas não inclui abril. O backend gera as ocorrências dentro da duração e de uma janela móvel de 12 meses; recorrências mais longas são completadas pelo agendador diário. Regras antigas sem duração (`NULL`) mantêm o comportamento anterior sem data final.
 
-O gerador trata meses mais curtos, mantendo o dia dentro do limite do mês (por exemplo, vencimento no dia 31 passa para o último dia de fevereiro). A duração configurável da série e a exclusão de ocorrências futuras ainda não estão implementadas.
+O gerador trata meses mais curtos, mantendo o dia dentro do limite do mês (por exemplo, vencimento no dia 31 passa para o último dia de fevereiro). Editar uma ocorrência altera somente aquele pagamento; não altera os dados da regra nem os demais pagamentos da série. Excluir uma ocorrência remove ela e todas as posteriores e desativa a regra de recorrência numa transação.
 
 ## Migrations
 
@@ -132,11 +134,11 @@ Não registre uma migration como aplicada se o SQL dela ainda não foi aplicado 
 
 ### Adicionar uma migration
 
-1. Crie um novo arquivo SQL em `backend/migrations/` com o próximo prefixo numérico, por exemplo `007_add_example_column.sql`.
+1. Crie um novo arquivo SQL em `backend/migrations/` com o próximo prefixo numérico, por exemplo `008_add_example_column.sql`.
 2. Não altere migrations que já foram aplicadas em algum banco; crie um novo arquivo para cada mudança de schema.
 3. Inicie o backend para aplicar e registrar a migration.
 4. Consulte `schema_migrations` para confirmar o registro.
 
 ## Hospedagem
 
-O CORS do backend está configurado para `http://localhost:5173`, e o cookie de sessão ainda não usa o atributo `Secure`. Antes de hospedar, será necessário configurar a origem real do frontend e cookies para HTTPS, além de usar credenciais e variáveis de ambiente próprias do ambiente publicado. A preparação da hospedagem está na etapa 11 do roteiro do projeto.
+O CORS do backend está configurado para `http://localhost:5173`, e o cookie de sessão ainda não usa o atributo `Secure`. Antes de hospedar, será necessário configurar a origem real do frontend e cookies para HTTPS, além de usar credenciais e variáveis de ambiente próprias do ambiente publicado. A preparação da hospedagem está na etapa 16 do roteiro do projeto.

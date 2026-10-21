@@ -4,6 +4,8 @@ export const validationMessages: Record<string, string> = {
   "Responsible is required": "Informe a pessoa responsável.",
   "Amount must be greater than zero": "O valor deve ser maior que zero.",
   "Invalid payment frequency": "Selecione uma frequência válida.",
+  "Duration must be at least 1 month":
+    "Informe uma duração de pelo menos 1 mês para a recorrência.",
   "Invalid payment status": "Selecione um status válido.",
   "Invalid request body": "Os dados enviados estão inválidos.",
   "Payment not found": "Esse pagamento não foi encontrado.",

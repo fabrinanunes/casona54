@@ -10,18 +10,21 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Payment struct {
-	ID          int     `json:"id"`
-	Description string  `json:"description"`
-	Amount      float64 `json:"amount"`
-	DueDate     string  `json:"due_date"`
-	Category    string  `json:"category"`
-	Responsible string  `json:"responsible"`
-	Status      string  `json:"status"`
-	PaidAt      string  `json:"paid_at"`
-	Frequency   string  `json:"frequency"`
+	ID             int     `json:"id"`
+	Description    string  `json:"description"`
+	Amount         float64 `json:"amount"`
+	DueDate        string  `json:"due_date"`
+	Category       string  `json:"category"`
+	Responsible    string  `json:"responsible"`
+	Status         string  `json:"status"`
+	PaidAt         string  `json:"paid_at"`
+	Frequency      string  `json:"frequency"`
+	DurationMonths int     `json:"duration_months,omitempty"`
+	IsRecurring    bool    `json:"is_recurring"`
 }
 
 func isValidPaymentFrequency(frequency string) bool {
@@ -102,7 +105,8 @@ func getPayments(w http.ResponseWriter, r *http.Request) {
 				responsible,
 				status,
 				COALESCE(paid_at::text, ''),
-				frequency
+				frequency,
+				recurrence_rule_id IS NOT NULL
 			FROM payments
 			ORDER BY id
 		`,
@@ -130,6 +134,7 @@ func getPayments(w http.ResponseWriter, r *http.Request) {
 			&payment.Status,
 			&payment.PaidAt,
 			&payment.Frequency,
+			&payment.IsRecurring,
 		)
 
 		if err != nil {
@@ -165,6 +170,11 @@ func createPayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if payment.Frequency != "once" && payment.DurationMonths < 1 {
+		http.Error(w, "Duration must be at least 1 month", http.StatusBadRequest)
+		return
+	}
+
 	ctx := r.Context()
 
 	tx, err := db.Begin(ctx)
@@ -187,9 +197,10 @@ func createPayment(w http.ResponseWriter, r *http.Request) {
 					frequency,
 					first_due_date,
 					category,
-					responsible
+					responsible,
+					duration_months
 				)
-				VALUES ($1, $2, $3, $4, $5, $6)
+				VALUES ($1, $2, $3, $4, $5, $6, $7)
 				RETURNING id
 			`,
 			payment.Description,
@@ -198,6 +209,7 @@ func createPayment(w http.ResponseWriter, r *http.Request) {
 			payment.DueDate,
 			payment.Category,
 			payment.Responsible,
+			payment.DurationMonths,
 		).Scan(&recurrenceRuleID)
 
 		if err != nil {
@@ -253,6 +265,7 @@ func createPayment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if recurrenceRuleID != 0 {
+		payment.IsRecurring = true
 		if err := generateUpcomingPayments(ctx); err != nil {
 			// O primeiro pagamento já foi salvo. O agendador tentará
 			// gerar as próximas ocorrências novamente.
@@ -469,23 +482,89 @@ func updatePayment(w http.ResponseWriter, r *http.Request, id int) {
 }
 
 func deletePayment(w http.ResponseWriter, r *http.Request, id int) {
-	commandTag, err := db.Exec(
-		r.Context(),
+	ctx := r.Context()
+	tx, err := db.Begin(ctx)
+	if err != nil {
+		log.Printf("failed to begin payment deletion transaction: %v", err)
+		http.Error(w, "Failed to delete payment", http.StatusInternalServerError)
+		return
+	}
+	defer tx.Rollback(ctx)
+
+	var recurrenceRuleID pgtype.Int4
+	err = tx.QueryRow(
+		ctx,
 		`
-			DELETE FROM payments
+			SELECT recurrence_rule_id
+			FROM payments
 			WHERE id = $1
+			FOR UPDATE
 		`,
 		id,
-	)
-
+	).Scan(&recurrenceRuleID)
 	if err != nil {
-		log.Printf("failed to delete payment: %v", err)
+		if errors.Is(err, pgx.ErrNoRows) {
+			http.Error(w, "Payment not found", http.StatusNotFound)
+			return
+		}
+
+		log.Printf("failed to find payment for deletion: %v", err)
 		http.Error(w, "Failed to delete payment", http.StatusInternalServerError)
 		return
 	}
 
-	if commandTag.RowsAffected() == 0 {
-		http.Error(w, "Payment not found", http.StatusNotFound)
+	if recurrenceRuleID.Valid {
+		// The generator locks the same rule row before inserting occurrences.
+		// Waiting for that lock ensures the deletion also catches any payments
+		// the generator was already creating.
+		var lockedRuleID int32
+		err = tx.QueryRow(
+			ctx,
+			`SELECT id FROM payment_recurrence_rules WHERE id = $1 FOR UPDATE`,
+			recurrenceRuleID.Int32,
+		).Scan(&lockedRuleID)
+		if err != nil {
+			log.Printf("failed to lock recurrence rule for deletion: %v", err)
+			http.Error(w, "Failed to delete payment", http.StatusInternalServerError)
+			return
+		}
+
+		// Occurrences are inserted in sequence order, so their payment IDs keep
+		// that order even when a user edits an occurrence's due date.
+		_, err = tx.Exec(
+			ctx,
+			`
+				DELETE FROM payments
+				WHERE recurrence_rule_id = $1
+				  AND id >= $2
+			`,
+			recurrenceRuleID.Int32,
+			id,
+		)
+		if err == nil {
+			_, err = tx.Exec(
+				ctx,
+				`UPDATE payment_recurrence_rules SET is_active = FALSE WHERE id = $1`,
+				recurrenceRuleID.Int32,
+			)
+		}
+	} else {
+		_, err = tx.Exec(
+			ctx,
+			`DELETE FROM payments WHERE id = $1`,
+			id,
+		)
+	}
+
+	if err != nil {
+		log.Printf("failed to delete payment or stop recurrence: %v", err)
+		http.Error(w, "Failed to delete payment", http.StatusInternalServerError)
+		return
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		log.Printf("failed to commit payment deletion: %v", err)
+		http.Error(w, "Failed to delete payment", http.StatusInternalServerError)
 		return
 	}
 
